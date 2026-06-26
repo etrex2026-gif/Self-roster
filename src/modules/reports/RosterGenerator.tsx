@@ -95,9 +95,9 @@ export default function RosterGenerator() {
       
       doc.setFontSize(8);
       doc.text(`BARA BARNOOTAA (ACADEMIC YEAR): ${schoolClass.academicYear}`, 14, 25);
-      doc.text(`KUTAA & DAMEE (GRADE & SECTION): ${schoolClass.grade}${schoolClass.section}`, pageWidth / 2 + 10, 25);
-      doc.text(`BARSIISAA GORSAA (HOMEROOM TEACHER): ${schoolClass.teacherName}`, 14, 30);
-      doc.text(`WAL-IDA'AMA BARATOOTA (TOTAL GRADE STUDENTS): ${results.length}`, pageWidth / 2 + 10, 30);
+      doc.text(`KUTAA & DAREE (GRADE & SECTION): ${schoolClass.grade}${schoolClass.section}`, pageWidth / 2 + 10, 25);
+      doc.text(`BARSIISAA I/GAFATAMAA DAREE (HOMEROOM TEACHER): ${schoolClass.teacherName}`, 14, 30);
+      doc.text(`WALIGALA BARATTOOTA (TOTAL GRADE STUDENTS): ${results.length}`, pageWidth / 2 + 10, 30);
       doc.text(`PAGE: ${pageIndex + 1} OF ${chunks.length}`, pageWidth - 14, 30, { align: 'right' });
 
       const head = [
@@ -128,11 +128,11 @@ export default function RosterGenerator() {
           { content: String(r.age), rowSpan: 3 },
           '1ffaa'
         ];
-        subjects.forEach(s => row1.push(String(r.subjectScores[s].sem1 ?? '-')));
+        subjects.forEach(s => row1.push(r.isDropout ? '-' : String(r.subjectScores[s].sem1 ?? '-')));
         row1.push(
-          String(r.sem1Total?.toFixed(1) || '-'),
-          String(r.sem1Avg?.toFixed(1) || '-'),
-          { content: String(r.sem1Rank || '-'), rowSpan: 1 },
+          r.isDropout ? '-' : String(r.sem1Total?.toFixed(1) || '-'),
+          r.isDropout ? '-' : String(r.sem1Avg?.toFixed(1) || '-'),
+          { content: r.isDropout ? '-' : String(r.sem1Rank || '-'), rowSpan: 1 },
           { content: getYaadaText(r, yaadaRules).toUpperCase(), rowSpan: 3 },
           { content: String(r.conduct || '-'), rowSpan: 3 },
           { content: String(r.absent || 0), rowSpan: 3 }
@@ -141,21 +141,21 @@ export default function RosterGenerator() {
 
         // 2ffaa
         const row2: any[] = ['2ffaa'];
-        subjects.forEach(s => row2.push(String(r.subjectScores[s].sem2 ?? '-')));
+        subjects.forEach(s => row2.push(r.isDropout ? '-' : String(r.subjectScores[s].sem2 ?? '-')));
         row2.push(
-          String(r.sem2Total?.toFixed(1) || '-'),
-          String(r.sem2Avg?.toFixed(1) || '-'),
-          String(r.sem2Rank || '-')
+          r.isDropout ? '-' : String(r.sem2Total?.toFixed(1) || '-'),
+          r.isDropout ? '-' : String(r.sem2Avg?.toFixed(1) || '-'),
+          r.isDropout ? '-' : String(r.sem2Rank || '-')
         );
         body.push(row2);
 
         // Ave
         const row3: any[] = ['Ave'];
-        subjects.forEach(s => row3.push(String(r.subjectScores[s].average?.toFixed(1) || '-')));
+        subjects.forEach(s => row3.push(r.isDropout ? '-' : String(r.subjectScores[s].average?.toFixed(1) || '-')));
         row3.push(
-          r.totalScore.toFixed(1),
-          r.generalAverage.toFixed(1),
-          String(r.rank)
+          r.isDropout ? '-' : r.totalScore.toFixed(1),
+          r.isDropout ? '-' : r.generalAverage.toFixed(1),
+          r.isDropout ? '-' : String(r.rank)
         );
         body.push(row3);
       });
@@ -193,6 +193,27 @@ export default function RosterGenerator() {
       footerTable("Barattoota Darban (Passed)", stats.pass, 82);
       footerTable("Barattoota Kufan (Failed)", stats.fail, 150);
       footerTable("Barattoota Addaan Kutan (Dropout)", stats.drop, 218);
+
+      // Signature Section
+      const sigY = 175;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+
+      // Teacher (Left Column)
+      doc.text(`Maqaa Barsiisaa/Barsiistuu (Homeroom Teacher Name): ${schoolClass.teacherName}`, 20, sigY);
+      doc.line(20, sigY + 3, 100, sigY + 3);
+      doc.text("Mallattoo (Signature):", 20, sigY + 9);
+      doc.line(20, sigY + 12, 100, sigY + 12);
+      doc.text("Guyyaa (Date):", 20, sigY + 18);
+      doc.line(20, sigY + 21, 100, sigY + 21);
+
+      // Director (Right Column)
+      doc.text("M/I/G (Director Name):", 160, sigY);
+      doc.line(160, sigY + 3, 240, sigY + 3);
+      doc.text("Mallattoo (Signature):", 160, sigY + 9);
+      doc.line(160, sigY + 12, 240, sigY + 12);
+      doc.text("Guyyaa (Date):", 160, sigY + 18);
+      doc.line(160, sigY + 21, 240, sigY + 21);
     });
 
     doc.save(`Roster_${schoolClass.grade}${schoolClass.section}.pdf`);
@@ -354,13 +375,13 @@ export default function RosterGenerator() {
             <div className="space-y-1">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bara Barnootaa (Academic Year)</p>
               <p className="text-sm font-bold text-slate-900">{data.schoolClass.academicYear}</p>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pt-2">Barsiisaa Gorsaa (Homeroom Teacher)</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pt-2">Barsiisaa I/Gafatamaa Daree (Homeroom Teacher)</p>
               <p className="text-sm font-bold text-slate-900">{data.schoolClass.teacherName}</p>
             </div>
             <div className="space-y-1 text-right">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kutaa & Damee (Grade & Section)</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kutaa & Daree (Grade & Section)</p>
               <p className="text-sm font-bold text-slate-900">{data.schoolClass.grade}{data.schoolClass.section}</p>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pt-2">Wal-ida'ama Barattoota (Total Students)</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pt-2">Waligala Barattoota (Total Students)</p>
               <p className="text-sm font-bold text-slate-900">{data.results.length}</p>
             </div>
           </div>

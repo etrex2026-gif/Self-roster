@@ -390,26 +390,27 @@ export default function ReportCardGenerator() {
     // RIGHT PANEL: COVER
     const rightMid = centerLine + (pageWidth - margin - centerLine) / 2;
     doc.setFont('times', 'bold');
-    doc.setFontSize(20);
-    const wrappedSchoolName = doc.splitTextToSize(schoolClass.schoolName.toUpperCase(), 130);
+    doc.setFontSize(16); // Slightly smaller to fit
+    const wrappedSchoolName = doc.splitTextToSize(schoolClass.schoolName.toUpperCase(), 120);
     doc.text(wrappedSchoolName, rightMid, innerMargin + 10, { align: 'center' });
     doc.setLineWidth(0.8);
-    doc.line(centerLine + 20, innerMargin + 14 + (wrappedSchoolName.length * 7), pageWidth - innerMargin - 20, innerMargin + 14 + (wrappedSchoolName.length * 7));
+    const schoolNameBottomY = innerMargin + 14 + (wrappedSchoolName.length * 7);
+    doc.line(centerLine + 20, schoolNameBottomY, pageWidth - innerMargin - 20, schoolNameBottomY);
     doc.setFontSize(9);
-    doc.text("ACADEMIC ASSESSMENT RECORD / GALMEE MADAALLII BARNOOTAA", rightMid, innerMargin + 20 + (wrappedSchoolName.length * 7), { align: 'center' });
+    doc.text("ACADEMIC ASSESSMENT RECORD / GALMEE MADAALLII BARNOOTAA", rightMid, schoolNameBottomY + 6, { align: 'center' });
 
     doc.setFillColor(0, 0, 0);
-    doc.rect(centerLine + 15, innerMargin + 26 + (wrappedSchoolName.length * 7), (pageWidth - innerMargin - centerLine) - 30, 16, 'F');
+    doc.rect(centerLine + 15, schoolNameBottomY + 12, (pageWidth - innerMargin - centerLine) - 30, 16, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('times', 'bold');
     doc.setFontSize(12);
-    doc.text("STUDENT REPORT CARD", rightMid, innerMargin + 32 + (wrappedSchoolName.length * 7), { align: 'center' });
+    doc.text("STUDENT REPORT CARD", rightMid, schoolNameBottomY + 18, { align: 'center' });
     doc.setFontSize(9);
-    doc.text("KAARDII GABAASA BARATAA", rightMid, innerMargin + 38 + (wrappedSchoolName.length * 7), { align: 'center' });
+    doc.text("KAARDII GABAASA BARATAA", rightMid, schoolNameBottomY + 24, { align: 'center' });
 
     doc.setTextColor(0, 0, 0);
     const details = [
-      { l_en: 'STUDENT NAME', l_or: 'MAQAA BARATAA', v: student.fullName.toUpperCase(), bold: true, size: 12 },
+      { l_en: 'STUDENT NAME', l_or: 'MAQAA BARATAA', v: student.fullName.toUpperCase(), bold: true, size: 10 },
       { l_en: 'SEX / AGE', l_or: 'SAALA / UMURII', v: `${student.gender === 'Male' ? 'MALE / DHIIRA' : 'FEMALE / DUBARTII'} / ${student.age}` },
       { l_en: 'ACADEMIC YEAR', l_or: 'BARA BARNOOTAA', v: schoolClass.academicYear },
       { l_en: 'GRADE & SECTION', l_or: 'KUTAA & DAREE', v: `${schoolClass.grade} - ${schoolClass.section}` },
@@ -418,25 +419,25 @@ export default function ReportCardGenerator() {
       { l_en: 'ABSENT', l_or: 'HAFUU', v: `${student.absent ?? 0} DAYS` },
     ];
     
-    y = innerMargin + 48;
+    y = schoolNameBottomY + 32;
     details.forEach(d => {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
+      doc.setFont(d.bold ? 'helvetica' : 'helvetica', d.bold ? 'bold' : 'bold');
+      doc.setFontSize(d.size || 8);
       doc.text(d.l_en, centerLine + 15, y);
       const enWidth = doc.getTextWidth(d.l_en);
 
       doc.setFont('helvetica', 'italic');
-      doc.setFontSize(6.5);
+      doc.setFontSize(d.size ? d.size - 2 : 6.5);
       doc.text(d.l_or, centerLine + 15, y + 3.5);
       const orWidth = doc.getTextWidth(d.l_or);
 
       const labelWidth = Math.max(enWidth, orWidth);
-      const colWidth = (pageWidth - innerMargin - 15) - (centerLine + 15); // 103.5
-      const gap = 4; // 4mm safety gap
+      const colWidth = (pageWidth - innerMargin - 15) - (centerLine + 15); 
+      const gap = 4;
       const maxValueWidth = colWidth - labelWidth - gap;
 
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
+      doc.setFont('helvetica', d.bold ? 'bold' : 'normal');
+      doc.setFontSize(d.size || 8.5);
       const valueLines = doc.splitTextToSize(String(d.v), maxValueWidth);
 
       let valueBaselineY = y + 1.5;
@@ -500,16 +501,32 @@ export default function ReportCardGenerator() {
     }
     doc.text(schoolName, innerMargin, innerMargin + 6);
     
-    doc.setFontSize(10); // Larger
-    doc.text(`STUDENT: ${student.fullName.toUpperCase()}`, pageWidth - innerMargin, innerMargin + 5, { align: 'right' });
-    doc.setFontSize(7.5);
-    doc.text(`| GRADE: ${schoolClass.grade} ${schoolClass.section}`, pageWidth - innerMargin - doc.getTextWidth(student.fullName.toUpperCase()) - 2, innerMargin + 5, { align: 'right' });
+    doc.setFontSize(8);
+    // Student Name
+    const nameLabelEn = "STUDENT: ";
+    const nameLabelOr = "BARATAA: ";
+    const studentName = student.fullName.toUpperCase();
     
+    // Grade/Section
+    const gradeLabelEn = `   GRADE: ${schoolClass.grade} ${schoolClass.section}`;
+    const gradeLabelOr = `   KUTAA: ${schoolClass.grade} ${schoolClass.section}`;
+
+    const headerNameW = 100;
+    const wrappedNameEn = doc.splitTextToSize(`${nameLabelEn}${studentName}`, headerNameW);
+    const wrappedNameOr = doc.splitTextToSize(`${nameLabelOr}${studentName}`, headerNameW);
+
+    doc.text(wrappedNameEn, pageWidth - innerMargin, innerMargin + 4, { align: 'right' });
     doc.setFont('times', 'italic');
-    doc.setFontSize(7.5);
-    doc.text(`BARATAA: ${student.fullName.toUpperCase()} | KUTAA: ${schoolClass.grade} ${schoolClass.section}`, pageWidth - innerMargin, innerMargin + 9, { align: 'right' });
+    doc.text(wrappedNameOr, pageWidth - innerMargin, innerMargin + 4 + (wrappedNameEn.length * 4), { align: 'right' });
+    
+    // Position grade info on separate line if name is long, or aligned to the right
+    doc.setFont('times', 'bold');
+    doc.text(gradeLabelEn, pageWidth - innerMargin, innerMargin + 4 + (wrappedNameEn.length * 4) + 4, { align: 'right' });
+    doc.setFont('times', 'italic');
+    doc.text(gradeLabelOr, pageWidth - innerMargin, innerMargin + 4 + (wrappedNameEn.length * 4) + 8, { align: 'right' });
+    
     doc.setLineWidth(0.3);
-    doc.line(innerMargin, innerMargin + 12, pageWidth - innerMargin, innerMargin + 12);
+    doc.line(innerMargin, innerMargin + 4 + (wrappedNameEn.length * 4) + 12, pageWidth - innerMargin, innerMargin + 4 + (wrappedNameEn.length * 4) + 12);
 
     // LEFT HALF: RESULTS TABLE
     const tableTop = innerMargin + 20;

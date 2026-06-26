@@ -10,7 +10,11 @@ export function calculateClassResults(
   
   const results: StudentResult[] = students.map(student => {
     const studentMarks = marks.filter(m => m.studentId === student.id);
-    const hasZero = studentMarks.some(m => m.score === 0);
+    const hasZero = subjects.some(subject => {
+      const sem1Mark = studentMarks.find(m => m.subject === subject && m.semester === 1)?.score;
+      const sem2Mark = studentMarks.find(m => m.subject === subject && m.semester === 2)?.score;
+      return sem1Mark === 0 || sem2Mark === 0;
+    });
     const subjectScores: StudentResult['subjectScores'] = {};
     
     let totalScore = 0;
@@ -75,12 +79,28 @@ export function calculateClassResults(
       sem1Rank: 0,
       sem2Rank: 0,
       rank: 0, // Calculated later
-      status: hasZero ? 'Dropout' : getStatusFromAverage(generalAverage),
+      status: hasZero ? 'HIN XUMMURE' : getStatusFromAverage(generalAverage),
       position: '', // Calculated later
       conduct: student.conduct,
       absent: student.absent,
       isDropout: hasZero
     };
+  });
+
+  // If a student is a dropout, reset their results to 0
+  results.forEach(r => {
+    if (r.isDropout) {
+      r.totalScore = 0;
+      r.generalAverage = 0;
+      r.sem1Total = 0;
+      r.sem2Total = 0;
+      r.sem1Avg = 0;
+      r.sem2Avg = 0;
+      r.sem1Rank = 0;
+      r.sem2Rank = 0;
+      r.rank = 0;
+      r.position = '';
+    }
   });
 
   // Sort by average to determine rank, excluding dropouts
