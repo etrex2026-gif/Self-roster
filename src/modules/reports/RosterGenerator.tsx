@@ -112,7 +112,7 @@ export default function RosterGenerator() {
         ],
         [
           ...subjects.map(s => s.substring(0, 3).toUpperCase()),
-          'IDA (TOT)', 'AVE', 'SAD (RNK)', 'G/H', 'YAADA', 'AMALA', 'HAFTE'
+          'IDA (TOT)', 'AVE', 'SAD (RNK)', 'YAADA', 'AMALA (CONDUCT)', 'HAFTE'
         ]
       ];
 
@@ -133,7 +133,6 @@ export default function RosterGenerator() {
           String(r.sem1Total?.toFixed(1) || '-'),
           String(r.sem1Avg?.toFixed(1) || '-'),
           { content: String(r.sem1Rank || '-'), rowSpan: 1 },
-          { content: getLetterFromAverage(r.generalAverage), rowSpan: 3 },
           { content: getYaadaText(r, yaadaRules).toUpperCase(), rowSpan: 3 },
           { content: String(r.conduct || '-'), rowSpan: 3 },
           { content: String(r.absent || 0), rowSpan: 3 }
@@ -386,8 +385,8 @@ export default function RosterGenerator() {
                 <TableHead className="text-center border-r border-slate-900 font-black text-[8px] uppercase">Ida (Tot)</TableHead>
                 <TableHead className="text-center border-r border-slate-900 font-black text-[8px] uppercase">Ave</TableHead>
                 <TableHead className="text-center border-r border-slate-900 font-black text-[8px] uppercase">Sad (Rnk)</TableHead>
-                <TableHead className="text-center border-r border-slate-900 font-black text-[8px] uppercase">G/H</TableHead>
                 <TableHead className="text-center border-r border-slate-900 font-black text-[8px] uppercase">Yaada</TableHead>
+                <TableHead className="text-center border-r border-slate-900 font-black text-[8px] uppercase">Amala (Conduct)</TableHead>
                 <TableHead className="text-center font-black text-[8px] uppercase">Hafte</TableHead>
               </TableRow>
             </TableHeader>
@@ -407,8 +406,8 @@ export default function RosterGenerator() {
                     <TableCell className="text-center border-r border-slate-900 text-[10px] font-bold">{r.sem1Total?.toFixed(1) || '-'}</TableCell>
                     <TableCell className="text-center border-r border-slate-900 text-[10px] font-bold">{r.sem1Avg?.toFixed(1) || '-'}</TableCell>
                     <TableCell className="text-center border-r border-slate-900 text-[10px] font-bold">{r.sem1Rank || '-'}</TableCell>
-                    <TableCell rowSpan={3} className="text-center border-r border-slate-900 text-xs font-black">{getLetterFromAverage(r.generalAverage)}</TableCell>
                     <TableCell rowSpan={3} className="text-center border-r border-slate-900 text-[10px] font-black uppercase text-slate-500">{getYaadaText(r, data.yaadaRules)}</TableCell>
+                    <TableCell rowSpan={3} className="text-center border-r border-slate-900 text-xs font-black">{r.conduct || '-'}</TableCell>
                     <TableCell rowSpan={3} className="text-center text-xs font-black">{r.absent ?? 0}</TableCell>
                   </TableRow>
                   {/* Semester 2 Row */}

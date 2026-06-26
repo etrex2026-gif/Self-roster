@@ -391,24 +391,25 @@ export default function ReportCardGenerator() {
     const rightMid = centerLine + (pageWidth - margin - centerLine) / 2;
     doc.setFont('times', 'bold');
     doc.setFontSize(20);
-    doc.text(schoolClass.schoolName.toUpperCase(), rightMid, innerMargin + 10, { align: 'center' });
+    const wrappedSchoolName = doc.splitTextToSize(schoolClass.schoolName.toUpperCase(), 130);
+    doc.text(wrappedSchoolName, rightMid, innerMargin + 10, { align: 'center' });
     doc.setLineWidth(0.8);
-    doc.line(centerLine + 20, innerMargin + 14, pageWidth - innerMargin - 20, innerMargin + 14);
+    doc.line(centerLine + 20, innerMargin + 14 + (wrappedSchoolName.length * 7), pageWidth - innerMargin - 20, innerMargin + 14 + (wrappedSchoolName.length * 7));
     doc.setFontSize(9);
-    doc.text("ACADEMIC ASSESSMENT RECORD / GALMEE MADAALLII BARNOOTAA", rightMid, innerMargin + 20, { align: 'center' });
+    doc.text("ACADEMIC ASSESSMENT RECORD / GALMEE MADAALLII BARNOOTAA", rightMid, innerMargin + 20 + (wrappedSchoolName.length * 7), { align: 'center' });
 
     doc.setFillColor(0, 0, 0);
-    doc.rect(centerLine + 15, innerMargin + 26, (pageWidth - innerMargin - centerLine) - 30, 16, 'F');
+    doc.rect(centerLine + 15, innerMargin + 26 + (wrappedSchoolName.length * 7), (pageWidth - innerMargin - centerLine) - 30, 16, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('times', 'bold');
     doc.setFontSize(12);
-    doc.text("STUDENT REPORT CARD", rightMid, innerMargin + 32, { align: 'center' });
+    doc.text("STUDENT REPORT CARD", rightMid, innerMargin + 32 + (wrappedSchoolName.length * 7), { align: 'center' });
     doc.setFontSize(9);
-    doc.text("KAARDII GABAASA BARATAA", rightMid, innerMargin + 38, { align: 'center' });
+    doc.text("KAARDII GABAASA BARATAA", rightMid, innerMargin + 38 + (wrappedSchoolName.length * 7), { align: 'center' });
 
     doc.setTextColor(0, 0, 0);
     const details = [
-      { l_en: 'STUDENT NAME', l_or: 'MAQAA BARATAA', v: student.fullName.toUpperCase() },
+      { l_en: 'STUDENT NAME', l_or: 'MAQAA BARATAA', v: student.fullName.toUpperCase(), bold: true, size: 12 },
       { l_en: 'SEX / AGE', l_or: 'SAALA / UMURII', v: `${student.gender === 'Male' ? 'MALE / DHIIRA' : 'FEMALE / DUBARTII'} / ${student.age}` },
       { l_en: 'ACADEMIC YEAR', l_or: 'BARA BARNOOTAA', v: schoolClass.academicYear },
       { l_en: 'GRADE & SECTION', l_or: 'KUTAA & DAREE', v: `${schoolClass.grade} - ${schoolClass.section}` },
@@ -491,12 +492,15 @@ export default function ReportCardGenerator() {
     
     // Header
     doc.setFont('times', 'bold');
-    doc.setFontSize(15);
-    const schoolName = schoolClass.schoolName.toUpperCase();
-    const wrappedSchoolName = doc.splitTextToSize(schoolName, 100);
-    doc.text(wrappedSchoolName, innerMargin, innerMargin + 6);
+    let schoolNameFontSize = 15;
+    let schoolName = schoolClass.schoolName.toUpperCase();
+    while (doc.getTextWidth(schoolName) > 100 && schoolNameFontSize > 8) {
+        schoolNameFontSize -= 0.5;
+        doc.setFontSize(schoolNameFontSize);
+    }
+    doc.text(schoolName, innerMargin, innerMargin + 6);
     
-    doc.setFontSize(8.5); // Slightly larger
+    doc.setFontSize(10); // Larger
     doc.text(`STUDENT: ${student.fullName.toUpperCase()}`, pageWidth - innerMargin, innerMargin + 5, { align: 'right' });
     doc.setFontSize(7.5);
     doc.text(`| GRADE: ${schoolClass.grade} ${schoolClass.section}`, pageWidth - innerMargin - doc.getTextWidth(student.fullName.toUpperCase()) - 2, innerMargin + 5, { align: 'right' });
