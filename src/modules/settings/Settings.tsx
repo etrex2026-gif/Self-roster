@@ -196,13 +196,37 @@ export default function Settings() {
                 onClick={async () => {
                   const confirmation = window.prompt("This action will permanently delete all data stored in this application.\n\nType RESET to confirm.");
                   if (confirmation === 'RESET') {
-                    await db.delete();
-                    localStorage.clear();
-                    sessionStorage.clear();
-                    toast.success('Factory reset completed successfully. The application will now restart.');
-                    setTimeout(() => {
-                      window.location.reload();
-                    }, 1000);
+                    try {
+                      // 1. Close DB
+                      db.close();
+                      
+                      // 2. Delete DB
+                      await db.delete();
+                      
+                      // 3. Clear Storage
+                      localStorage.clear();
+                      sessionStorage.clear();
+                      
+                      // 4. Clear Caches
+                      if ('caches' in window) {
+                        const cacheNames = await caches.keys();
+                        await Promise.all(cacheNames.map(name => caches.delete(name)));
+                      }
+                      
+                      // 5. Unregister Service Workers
+                      if ('serviceWorker' in navigator) {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        await Promise.all(registrations.map(reg => reg.unregister()));
+                      }
+                      
+                      toast.success('Factory reset completed successfully. The application will now restart.');
+                      setTimeout(() => {
+                        window.location.href = '/';
+                      }, 1000);
+                    } catch (error) {
+                      console.error('Factory reset failed', error);
+                      toast.error('Factory reset failed. Please try again.');
+                    }
                   } else if (confirmation !== null) {
                     toast.error('Invalid confirmation string. Reset cancelled.');
                   }

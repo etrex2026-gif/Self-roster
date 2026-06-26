@@ -18,6 +18,8 @@ export default function StudentManagement() {
   const classId = parseInt(id!);
   const [searchTerm, setSearchTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [savePreference, setSavePreference] = useState<'original' | 'alphabetical'>('original');
   
   // Form state
   const [fullName, setFullName] = useState('');
@@ -48,9 +50,7 @@ export default function StudentManagement() {
     s.rollNo.toString().includes(searchTerm)
   );
 
-  const handleSaveStudent = async () => {
-    if (!fullName) return toast.error('Full name is required');
-
+  const performSave = async (preference: 'original' | 'alphabetical') => {
     if (editingId) {
       await db.students.update(editingId, { fullName, gender, age, dob, isDropout });
       toast.success('Student updated');
@@ -69,9 +69,17 @@ export default function StudentManagement() {
       toast.success('Student added');
     }
 
+    await db.classes.update(classId, { sortingPreference: preference });
     await reassignRollNumbers();
+    
+    setIsConfirmOpen(false);
     setIsOpen(false);
     resetForm();
+  };
+
+  const handleSaveClick = () => {
+    if (!fullName) return toast.error('Full name is required');
+    setIsConfirmOpen(true);
   };
 
   const reassignRollNumbers = async () => {
@@ -250,7 +258,32 @@ export default function StudentManagement() {
                 </div>
               </div>
               <DialogFooter>
-                <Button className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 font-bold" onClick={handleSaveStudent}>Save Changes</Button>
+                <Button className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 font-bold" onClick={handleSaveClick}>Save Changes</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+            <DialogContent className="rounded-3xl border-slate-200">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-black">Save Student List</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-6 py-6">
+                <p className="text-sm text-slate-500">Choose how you want to save the student list.</p>
+                <div className="space-y-4">
+                  <div className={cn("p-4 rounded-2xl border cursor-pointer transition-all", savePreference === 'original' ? "border-indigo-600 bg-indigo-50" : "border-slate-200")} onClick={() => setSavePreference('original')}>
+                    <p className="font-bold text-slate-900">Save in the Current Order</p>
+                    <p className="text-xs text-slate-500">Keep students exactly as they were entered or imported. Preserve the original order. Assign roll numbers based on this order.</p>
+                  </div>
+                  <div className={cn("p-4 rounded-2xl border cursor-pointer transition-all", savePreference === 'alphabetical' ? "border-indigo-600 bg-indigo-50" : "border-slate-200")} onClick={() => setSavePreference('alphabetical')}>
+                    <p className="font-bold text-slate-900">Sort Alphabetically Before Saving</p>
+                    <p className="text-xs text-slate-500">Sort all students alphabetically by Full Name (A–Z). Regenerate roll numbers according to the alphabetical order. Save the sorted list.</p>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter className="flex gap-2">
+                <Button variant="outline" className="h-12 rounded-xl flex-1" onClick={() => setIsConfirmOpen(false)}>Cancel</Button>
+                <Button className="h-12 rounded-xl flex-1 bg-indigo-600 hover:bg-indigo-700" onClick={() => performSave(savePreference)}>Save</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
