@@ -1,5 +1,5 @@
 {
-  "name": "School Result Management System",
+  "name": "Ramoda Roster",
   "description": "A comprehensive offline-first school result management system for teachers to manage classes, students, and generate report cards.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

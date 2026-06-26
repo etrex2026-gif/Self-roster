@@ -48,7 +48,7 @@ export default function Sidebar({ onLogout, isOpen, setIsOpen }: SidebarProps) {
           <div className="p-6 border-b border-slate-900 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">E</div>
-              <h1 className="text-white font-bold tracking-tight text-lg">EduPortal <span className="text-xs font-normal opacity-50">v1.0</span></h1>
+              <h1 className="text-white font-bold tracking-tight text-lg">Ramoda Roster <span className="text-xs font-normal opacity-50">v1.0</span></h1>
             </div>
             {/* Close Button inside Drawer for Mobile */}
             <Button
