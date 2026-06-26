@@ -26,12 +26,19 @@ export default function MarkEntry() {
     [classId, sem]
   );
 
-  const handleMarkChange = async (studentId: number, score: number) => {
-    if (score < 0 || score > 100) return;
+  const handleMarkChange = async (studentId: number, score: number | null) => {
+    if (score !== null && (score < 0 || score > 100)) return;
     
     const existingMark = await db.marks
       .where({ studentId, semester: sem, subject: selectedSubject })
       .first();
+
+    if (score === null) {
+      if (existingMark) {
+        await db.marks.delete(existingMark.id!);
+      }
+      return;
+    }
 
     if (existingMark) {
       await db.marks.update(existingMark.id!, { score });
@@ -171,7 +178,10 @@ export default function MarkEntry() {
                           min="0"
                           max="100"
                           value={mark?.score ?? ''}
-                          onChange={e => handleMarkChange(student.id!, parseInt(e.target.value) || 0)}
+                          onChange={e => {
+                            const value = e.target.value;
+                            handleMarkChange(student.id!, value === '' ? null : parseInt(value));
+                          }}
                           className={cn(
                             "h-10 rounded-xl transition-all font-bold text-center",
                             isComplete ? "border-emerald-200 bg-emerald-50 text-emerald-700 focus-visible:ring-emerald-500" : "border-slate-200 focus-visible:ring-indigo-500"
