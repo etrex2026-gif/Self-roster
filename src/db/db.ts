@@ -15,6 +15,7 @@ export interface SchoolClass {
   grade: string;
   section: string;
   subjects: string[];
+  sortingPreference: 'original' | 'alphabetical';
 }
 
 export interface Student {
@@ -54,7 +55,7 @@ export class SchoolDB extends Dexie {
 
   constructor() {
     super('SchoolResultDB');
-    this.version(2).stores({
+    this.version(3).stores({
       teachers: '++id, name, password',
       classes: '++id, grade, section',
       students: '++id, classId, rollNo, fullName',

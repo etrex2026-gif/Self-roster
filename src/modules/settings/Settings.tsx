@@ -184,6 +184,34 @@ export default function Settings() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="md:col-span-2 border-red-200 bg-red-50/50">
+          <CardHeader>
+            <CardTitle className="text-red-700">Factory Reset</CardTitle>
+            <CardDescription className="text-red-600/80">Delete all saved data and restore the application to its default state.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+                variant="destructive" 
+                onClick={async () => {
+                  const confirmation = window.prompt("This action will permanently delete all data stored in this application.\n\nType RESET to confirm.");
+                  if (confirmation === 'RESET') {
+                    await db.delete();
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    toast.success('Factory reset completed successfully. The application will now restart.');
+                    setTimeout(() => {
+                      window.location.reload();
+                    }, 1000);
+                  } else if (confirmation !== null) {
+                    toast.error('Invalid confirmation string. Reset cancelled.');
+                  }
+                }}
+            >
+                Factory Reset
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

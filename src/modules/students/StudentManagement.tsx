@@ -27,9 +27,20 @@ export default function StudentManagement() {
   const [isDropout, setIsDropout] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  const students = useLiveQuery(
-    () => db.students.where('classId').equals(classId).sortBy('fullName'),
+  const schoolClass = useLiveQuery(
+    () => db.classes.get(classId),
     [classId]
+  );
+
+  const students = useLiveQuery(
+    async () => {
+      const s = await db.students.where('classId').equals(classId).toArray();
+      if (schoolClass?.sortingPreference === 'alphabetical') {
+        return s.sort((a, b) => a.fullName.localeCompare(b.fullName));
+      }
+      return s.sort((a, b) => a.rollNo - b.rollNo);
+    },
+    [classId, schoolClass?.sortingPreference]
   );
 
   const filteredStudents = students?.filter(s => 
@@ -64,9 +75,16 @@ export default function StudentManagement() {
   };
 
   const reassignRollNumbers = async () => {
-    const allStudents = await db.students.where('classId').equals(classId).sortBy('fullName');
-    for (let i = 0; i < allStudents.length; i++) {
-      await db.students.update(allStudents[i].id!, { rollNo: i + 1 });
+    const s = await db.students.where('classId').equals(classId).toArray();
+    let sortedStudents = [...s];
+    if (schoolClass?.sortingPreference === 'alphabetical') {
+      sortedStudents.sort((a, b) => a.fullName.localeCompare(b.fullName));
+    } else {
+      sortedStudents.sort((a, b) => a.id! - b.id!);
+    }
+    
+    for (let i = 0; i < sortedStudents.length; i++) {
+      await db.students.update(sortedStudents[i].id!, { rollNo: i + 1 });
     }
   };
 
@@ -128,11 +146,34 @@ export default function StudentManagement() {
     reader.readAsText(file);
   };
 
+  const toggleSortingPreference = async (preference: 'original' | 'alphabetical') => {
+    if (confirm('This will reorder all students and update their roll numbers. Continue?')) {
+        await db.classes.update(classId, { sortingPreference: preference });
+        await reassignRollNumbers();
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex flex-col gap-1">
           <p className="text-slate-500 font-medium">{students?.length ?? 0} Students currently enrolled</p>
+          <div className="flex gap-4 mt-2">
+            <Button 
+                variant={schoolClass?.sortingPreference !== 'alphabetical' ? 'default' : 'outline'} 
+                className="rounded-xl h-10"
+                onClick={() => toggleSortingPreference('original')}
+            >
+                Keep Import/Entry Order
+            </Button>
+            <Button 
+                variant={schoolClass?.sortingPreference === 'alphabetical' ? 'default' : 'outline'} 
+                className="rounded-xl h-10"
+                onClick={() => toggleSortingPreference('alphabetical')}
+            >
+                Sort Alphabetically
+            </Button>
+          </div>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
           <div className="relative flex-1 md:flex-none">

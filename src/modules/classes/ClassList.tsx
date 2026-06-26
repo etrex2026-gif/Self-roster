@@ -55,7 +55,8 @@ export default function ClassList() {
       academicYear,
       grade,
       section,
-      subjects
+      subjects,
+      sortingPreference: 'original'
     });
 
     toast.success('Class created successfully');
