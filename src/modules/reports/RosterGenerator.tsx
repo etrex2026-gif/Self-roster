@@ -168,11 +168,13 @@ export default function RosterGenerator() {
         styles: { fontSize: 6.5, cellPadding: 1, halign: 'center', valign: 'middle', lineColor: [0, 0, 0], lineWidth: 0.1 },
         headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.2 },
         columnStyles: {
-          1: { halign: 'left', cellWidth: 35 },
-          4: { fontStyle: 'italic', fontSize: 5.5 }
+          1: { halign: 'left', cellWidth: 35, fontStyle: 'bold' },
+          2: { fontStyle: 'bold' },
+          3: { fontStyle: 'bold' },
+          4: { fontStyle: 'italic', fontSize: 5.5 },
+          ...Object.fromEntries(Array.from({length: subjects.length + 7}, (_, i) => [i + 5, {fontStyle: 'bold'}]))
         }
       });
-
       const stats = calculateStats(chunk);
       const finalY = (doc as any).lastAutoTable.finalY + 5;
       
@@ -298,7 +300,16 @@ export default function RosterGenerator() {
                 cell.alignment = { horizontal: 'center', vertical: 'middle' };
             });
         });
+        [2, 3, 4].forEach(col => {
+            row1.getCell(col).font = { bold: true };
+        });
         
+        // Bold mark columns 5 to numCols
+        for (let col = 5; col <= numCols; col++) {
+          row1.getCell(col).font = { bold: true };
+          row2.getCell(col).font = { bold: true };
+          row3.getCell(col).font = { bold: true };
+        }        
         // Merge student columns
         [1, 2, 3, 4, 6 + subjects.length, 7 + subjects.length, 8 + subjects.length, 9 + subjects.length, 10 + subjects.length, 11 + subjects.length].forEach(col => {
             worksheet.mergeCells(row1.number, col, row3.number, col);
@@ -414,32 +425,32 @@ export default function RosterGenerator() {
             <TableBody>
               {data.results.map((r, idx) => (
                 <React.Fragment key={r.id}>
-                  {/* Semester 1 Row */}
+                    {/* Semester 1 Row */}
                   <TableRow className="border-b border-slate-900">
                     <TableCell rowSpan={3} className="text-center border-r border-slate-900 font-bold text-xs">{idx + 1}</TableCell>
-                    <TableCell rowSpan={3} className="font-black text-slate-900 border-r border-slate-900 text-xs uppercase px-4">{r.fullName}</TableCell>
+                    <TableCell rowSpan={3} className="font-bold text-slate-900 border-r border-slate-900 text-xs uppercase px-4">{r.fullName}</TableCell>
                     <TableCell rowSpan={3} className="text-center border-r border-slate-900 text-xs font-bold">{r.gender === 'Male' ? 'Dhi' : 'Dub'}</TableCell>
                     <TableCell rowSpan={3} className="text-center border-r border-slate-900 text-xs font-bold">{r.age}</TableCell>
                     <TableCell className="text-center border-r border-slate-900 text-[9px] font-black uppercase text-slate-500 py-1 bg-slate-50/30">1ffaa</TableCell>
                     {data.schoolClass.subjects.map(s => (
-                      <TableCell key={`${s}-sem1`} className="text-center border-r border-slate-900 text-[10px] font-medium py-1">{r.subjectScores[s].sem1 || '-'}</TableCell>
+                      <TableCell key={`${s}-sem1`} className="text-center border-r border-slate-900 text-[10px] font-bold py-1">{r.subjectScores[s].sem1 || '-'}</TableCell>
                     ))}
                     <TableCell className="text-center border-r border-slate-900 text-[10px] font-bold">{r.sem1Total?.toFixed(1) || '-'}</TableCell>
                     <TableCell className="text-center border-r border-slate-900 text-[10px] font-bold">{r.sem1Avg?.toFixed(1) || '-'}</TableCell>
                     <TableCell className="text-center border-r border-slate-900 text-[10px] font-bold">{r.sem1Rank || '-'}</TableCell>
                     <TableCell rowSpan={3} className="text-center border-r border-slate-900 text-[10px] font-black uppercase text-slate-500">{getYaadaText(r, data.yaadaRules)}</TableCell>
-                    <TableCell rowSpan={3} className="text-center border-r border-slate-900 text-xs font-black">{r.conduct || '-'}</TableCell>
-                    <TableCell rowSpan={3} className="text-center text-xs font-black">{r.absent ?? 0}</TableCell>
+                    <TableCell rowSpan={3} className="text-center border-r border-slate-900 text-xs font-bold">{r.conduct || '-'}</TableCell>
+                    <TableCell rowSpan={3} className="text-center text-xs font-bold">{r.absent ?? 0}</TableCell>
                   </TableRow>
                   {/* Semester 2 Row */}
                   <TableRow className="border-b border-slate-900">
                     <TableCell className="text-center border-r border-slate-900 text-[9px] font-black uppercase text-slate-500 py-1 bg-slate-50/30">2ffaa</TableCell>
                     {data.schoolClass.subjects.map(s => (
-                      <TableCell key={`${s}-sem2`} className="text-center border-r border-slate-900 text-[10px] font-medium py-1">{r.subjectScores[s].sem2 || '-'}</TableCell>
+                      <TableCell key={`${s}-sem2`} className="text-center border-r border-slate-900 text-[10px] font-bold py-1">{r.subjectScores[s].sem2 || '-'}</TableCell>
                     ))}
                     <TableCell className="text-center border-r border-slate-900 text-[10px] font-bold">{r.sem2Total?.toFixed(1) || '-'}</TableCell>
                     <TableCell className="text-center border-r border-slate-900 text-[10px] font-bold">{r.sem2Avg?.toFixed(1) || '-'}</TableCell>
-                    <TableCell className="text-center border-r border-slate-900 text-xs font-black">{r.sem2Rank || '-'}</TableCell>
+                    <TableCell className="text-center border-r border-slate-900 text-xs font-bold">{r.sem2Rank || '-'}</TableCell>
                   </TableRow>
                   {/* Average Row */}
                   <TableRow className="border-b border-slate-900 bg-slate-50/50">
