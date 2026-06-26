@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../db/db';
@@ -186,6 +186,8 @@ class ScaledPdfWriter {
 export default function ReportCardGenerator() {
   const { id } = useParams();
   const classId = parseInt(id!);
+  const [printLayout, setPrintLayout] = useState<'standard' | 'grouped'>(() => (localStorage.getItem('printLayout') as 'standard' | 'grouped') || 'standard');
+  useEffect(() => { localStorage.setItem('printLayout', printLayout); }, [printLayout]);
   const [currentPage, setCurrentPage] = useState(0);
   const [previewPage, setPreviewPage] = useState<1 | 2>(1);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -233,6 +235,7 @@ export default function ReportCardGenerator() {
     yaadaRules: any,
     hasEthiopicFont: boolean,
     totalStudentsCount: number,
+    layout: 'standard' | 'grouped',
     onProgress?: (progress: number) => void
   ) => {
     const scale = 0.66;
@@ -240,55 +243,91 @@ export default function ReportCardGenerator() {
     const topOffsetY = 5.0;
     const bottomOffsetY = 153.5;
 
-    for (let i = 0; i < students.length; i += 2) {
-      const student1 = students[i];
-      const student2 = i + 1 < students.length ? students[i + 1] : null;
-
-      // Page 1 of this pair: Cover Pages
-      const topCoverWriter = new ScaledPdfWriter(doc, scale, offsetX, topOffsetY, hasEthiopicFont);
-      drawCoverPage(topCoverWriter, student1, schoolClass);
-
-      if (student2) {
-        const bottomCoverWriter = new ScaledPdfWriter(doc, scale, offsetX, bottomOffsetY, hasEthiopicFont);
-        drawCoverPage(bottomCoverWriter, student2, schoolClass);
-      }
-
-      // Thin separator line on Page 1
-      doc.setDrawColor(128, 128, 128);
-      doc.setLineWidth(0.2);
-      doc.setLineDashPattern([2, 2], 0);
-      doc.line(0, 148.5, 210, 148.5);
-      doc.setLineDashPattern([], 0); // reset
-
-      // Page 2 of this pair: Results Pages
-      doc.addPage('a4', 'p');
-
-      const yaadaText1 = getYaadaText(student1, yaadaRules);
-      const topResultsWriter = new ScaledPdfWriter(doc, scale, offsetX, topOffsetY, hasEthiopicFont);
-      drawResultsPage(topResultsWriter, student1, schoolClass, yaadaText1, hasEthiopicFont, totalStudentsCount);
-
-      if (student2) {
-        const yaadaText2 = getYaadaText(student2, yaadaRules);
-        const bottomResultsWriter = new ScaledPdfWriter(doc, scale, offsetX, bottomOffsetY, hasEthiopicFont);
-        drawResultsPage(bottomResultsWriter, student2, schoolClass, yaadaText2, hasEthiopicFont, totalStudentsCount);
-      }
-
-      // Thin separator line on Page 2
-      doc.setDrawColor(128, 128, 128);
-      doc.setLineWidth(0.2);
-      doc.setLineDashPattern([2, 2], 0);
-      doc.line(0, 148.5, 210, 148.5);
-      doc.setLineDashPattern([], 0); // reset
-
-      if (onProgress) {
-        const processedCount = Math.min(i + 2, students.length);
-        onProgress(Math.round((processedCount / students.length) * 100));
-      }
-
-      // If there are more students, add a new page for the next pair
-      if (i + 2 < students.length) {
+    if (layout === 'grouped') {
+        // Block 1: Cover Pages
+        for (let i = 0; i < students.length; i += 2) {
+            const student1 = students[i];
+            const student2 = i + 1 < students.length ? students[i + 1] : null;
+            const topCoverWriter = new ScaledPdfWriter(doc, scale, offsetX, topOffsetY, hasEthiopicFont);
+            drawCoverPage(topCoverWriter, student1, schoolClass);
+            if (student2) {
+                const bottomCoverWriter = new ScaledPdfWriter(doc, scale, offsetX, bottomOffsetY, hasEthiopicFont);
+                drawCoverPage(bottomCoverWriter, student2, schoolClass);
+            }
+            if (i + 2 < students.length) doc.addPage('a4', 'p');
+        }
+        
         doc.addPage('a4', 'p');
-      }
+
+        // Block 2: Results Pages
+        for (let i = 0; i < students.length; i += 2) {
+            const student1 = students[i];
+            const student2 = i + 1 < students.length ? students[i + 1] : null;
+            
+            const yaadaText1 = getYaadaText(student1, yaadaRules);
+            const topResultsWriter = new ScaledPdfWriter(doc, scale, offsetX, topOffsetY, hasEthiopicFont);
+            drawResultsPage(topResultsWriter, student1, schoolClass, yaadaText1, hasEthiopicFont, totalStudentsCount);
+            
+            if (student2) {
+                const yaadaText2 = getYaadaText(student2, yaadaRules);
+                const bottomResultsWriter = new ScaledPdfWriter(doc, scale, offsetX, bottomOffsetY, hasEthiopicFont);
+                drawResultsPage(bottomResultsWriter, student2, schoolClass, yaadaText2, hasEthiopicFont, totalStudentsCount);
+            }
+            if (onProgress) onProgress(Math.round(((i + 2) / students.length) * 100));
+            if (i + 2 < students.length) doc.addPage('a4', 'p');
+        }
+    } else {
+        // Standard Layout
+        for (let i = 0; i < students.length; i += 2) {
+            const student1 = students[i];
+            const student2 = i + 1 < students.length ? students[i + 1] : null;
+
+            // Page 1 of this pair: Cover Pages
+            const topCoverWriter = new ScaledPdfWriter(doc, scale, offsetX, topOffsetY, hasEthiopicFont);
+            drawCoverPage(topCoverWriter, student1, schoolClass);
+
+            if (student2) {
+                const bottomCoverWriter = new ScaledPdfWriter(doc, scale, offsetX, bottomOffsetY, hasEthiopicFont);
+                drawCoverPage(bottomCoverWriter, student2, schoolClass);
+            }
+
+            // Thin separator line on Page 1
+            doc.setDrawColor(128, 128, 128);
+            doc.setLineWidth(0.2);
+            doc.setLineDashPattern([2, 2], 0);
+            doc.line(0, 148.5, 210, 148.5);
+            doc.setLineDashPattern([], 0); // reset
+
+            // Page 2 of this pair: Results Pages
+            doc.addPage('a4', 'p');
+
+            const yaadaText1 = getYaadaText(student1, yaadaRules);
+            const topResultsWriter = new ScaledPdfWriter(doc, scale, offsetX, topOffsetY, hasEthiopicFont);
+            drawResultsPage(topResultsWriter, student1, schoolClass, yaadaText1, hasEthiopicFont, totalStudentsCount);
+
+            if (student2) {
+                const yaadaText2 = getYaadaText(student2, yaadaRules);
+                const bottomResultsWriter = new ScaledPdfWriter(doc, scale, offsetX, bottomOffsetY, hasEthiopicFont);
+                drawResultsPage(bottomResultsWriter, student2, schoolClass, yaadaText2, hasEthiopicFont, totalStudentsCount);
+            }
+
+            // Thin separator line on Page 2
+            doc.setDrawColor(128, 128, 128);
+            doc.setLineWidth(0.2);
+            doc.setLineDashPattern([2, 2], 0);
+            doc.line(0, 148.5, 210, 148.5);
+            doc.setLineDashPattern([], 0); // reset
+
+            if (onProgress) {
+                const processedCount = Math.min(i + 2, students.length);
+                onProgress(Math.round((processedCount / students.length) * 100));
+            }
+
+            // If there are more students, add a new page for the next pair
+            if (i + 2 < students.length) {
+                doc.addPage('a4', 'p');
+            }
+        }
     }
   };
 
@@ -304,7 +343,7 @@ export default function ReportCardGenerator() {
 
     const hasEthiopicFont = await fetchFontAndRegister(doc);
 
-    buildPortraitReportCards(doc, [student], schoolClass, yaadaRules, hasEthiopicFont, data?.results.length || 0);
+    buildPortraitReportCards(doc, [student], schoolClass, yaadaRules, hasEthiopicFont, data?.results.length || 0, 'standard');
 
     return doc;
   };
@@ -922,6 +961,7 @@ export default function ReportCardGenerator() {
         yaadaRules,
         hasEthiopicFont,
         total,
+        printLayout,
         (progress) => setCombinedProgress(progress)
       );
 
@@ -958,6 +998,16 @@ export default function ReportCardGenerator() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto justify-center xl:justify-end">
+          <div className="flex items-center gap-2 bg-slate-200 p-1 rounded-xl">
+            <label className={cn("flex items-center gap-1 p-2 rounded-lg text-[10px] cursor-pointer", printLayout === 'standard' && "bg-white shadow-sm")}>
+              <input type="radio" value="standard" checked={printLayout === 'standard'} onChange={() => setPrintLayout('standard')} className="w-3 h-3"/>
+              Standard
+            </label>
+            <label className={cn("flex items-center gap-1 p-2 rounded-lg text-[10px] cursor-pointer", printLayout === 'grouped' && "bg-white shadow-sm")}>
+              <input type="radio" value="grouped" checked={printLayout === 'grouped'} onChange={() => setPrintLayout('grouped')} className="w-3 h-3"/>
+              Grouped
+            </label>
+          </div>
           <div className="flex bg-slate-200 p-1 rounded-xl w-full sm:w-auto justify-center">
             <Button 
               variant={previewPage === 1 ? "default" : "ghost"} 
