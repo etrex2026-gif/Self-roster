@@ -492,10 +492,17 @@ export default function ReportCardGenerator() {
     // Header
     doc.setFont('times', 'bold');
     doc.setFontSize(15);
-    doc.text(schoolClass.schoolName.toUpperCase(), innerMargin, innerMargin + 6);
+    const schoolName = schoolClass.schoolName.toUpperCase();
+    const wrappedSchoolName = doc.splitTextToSize(schoolName, 100);
+    doc.text(wrappedSchoolName, innerMargin, innerMargin + 6);
+    
+    doc.setFontSize(8.5); // Slightly larger
+    doc.text(`STUDENT: ${student.fullName.toUpperCase()}`, pageWidth - innerMargin, innerMargin + 5, { align: 'right' });
     doc.setFontSize(7.5);
-    doc.text(`STUDENT: ${student.fullName.toUpperCase()} | GRADE: ${schoolClass.grade} ${schoolClass.section}`, pageWidth - innerMargin, innerMargin + 5, { align: 'right' });
+    doc.text(`| GRADE: ${schoolClass.grade} ${schoolClass.section}`, pageWidth - innerMargin - doc.getTextWidth(student.fullName.toUpperCase()) - 2, innerMargin + 5, { align: 'right' });
+    
     doc.setFont('times', 'italic');
+    doc.setFontSize(7.5);
     doc.text(`BARATAA: ${student.fullName.toUpperCase()} | KUTAA: ${schoolClass.grade} ${schoolClass.section}`, pageWidth - innerMargin, innerMargin + 9, { align: 'right' });
     doc.setLineWidth(0.3);
     doc.line(innerMargin, innerMargin + 12, pageWidth - innerMargin, innerMargin + 12);

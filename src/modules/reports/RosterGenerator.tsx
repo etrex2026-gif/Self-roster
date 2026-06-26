@@ -108,11 +108,11 @@ export default function RosterGenerator() {
           { content: 'UMRII (AGE)', rowSpan: 2 },
           { content: 'SEEM (TERM)', rowSpan: 2 },
           { content: 'GOSA BARNOOTAA (SUBJECT COURSES)', colSpan: subjects.length },
-          { content: 'WALIIGALA BARNOOTAA (ACADEMIC RESULTS SUMMARY)', colSpan: 6 }
+          { content: 'WALIIGALA BARNOOTAA (ACADEMIC RESULTS SUMMARY)', colSpan: 7 }
         ],
         [
           ...subjects.map(s => s.substring(0, 3).toUpperCase()),
-          'IDA (TOT)', 'AVE', 'SAD (RNK)', 'G/H', 'YAADA', 'HAFTE'
+          'IDA (TOT)', 'AVE', 'SAD (RNK)', 'G/H', 'YAADA', 'AMALA', 'HAFTE'
         ]
       ];
 
@@ -135,6 +135,7 @@ export default function RosterGenerator() {
           { content: String(r.sem1Rank || '-'), rowSpan: 1 },
           { content: getLetterFromAverage(r.generalAverage), rowSpan: 3 },
           { content: getYaadaText(r, yaadaRules).toUpperCase(), rowSpan: 3 },
+          { content: String(r.conduct || '-'), rowSpan: 3 },
           { content: String(r.absent || 0), rowSpan: 3 }
         );
         body.push(row1);

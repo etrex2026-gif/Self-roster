@@ -10,6 +10,7 @@ export function calculateClassResults(
   
   const results: StudentResult[] = students.map(student => {
     const studentMarks = marks.filter(m => m.studentId === student.id);
+    const hasZero = studentMarks.some(m => m.score === 0);
     const subjectScores: StudentResult['subjectScores'] = {};
     
     let totalScore = 0;
@@ -74,11 +75,11 @@ export function calculateClassResults(
       sem1Rank: 0,
       sem2Rank: 0,
       rank: 0, // Calculated later
-      status: student.isDropout ? 'Dropout' : getStatusFromAverage(generalAverage),
+      status: hasZero ? 'Dropout' : getStatusFromAverage(generalAverage),
       position: '', // Calculated later
       conduct: student.conduct,
       absent: student.absent,
-      isDropout: student.isDropout
+      isDropout: hasZero
     };
   });
 
