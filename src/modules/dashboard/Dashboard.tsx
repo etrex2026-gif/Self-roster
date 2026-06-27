@@ -79,6 +79,12 @@ export default function Dashboard() {
           <p className="text-muted-foreground">Welcome to your school management overview.</p>
         </div>
         <div className="flex gap-2">
+          <Link to="/import-reports">
+            <Button className="gap-2 bg-emerald-600 hover:bg-emerald-700">
+              <Upload className="h-4 w-4" />
+              Import Roster → Report Card
+            </Button>
+          </Link>
           <Link to="/classes">
             <Button className="gap-2">
               <Plus className="h-4 w-4" />

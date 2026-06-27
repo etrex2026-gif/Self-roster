@@ -8,7 +8,8 @@ import {
   BarChart3, 
   FileSpreadsheet, 
   FileText,
-  Calculator
+  Calculator,
+  FileUp
 } from 'lucide-react';
 
 export default function ClassSubNav() {
@@ -25,6 +26,7 @@ export default function ClassSubNav() {
     { name: 'Calculate Results', path: `/classes/${classId}/analysis`, icon: Calculator },
     { name: 'Class Analysis', path: `/classes/${classId}/analysis`, icon: BarChart3 },
     { name: 'Report Cards', path: `/classes/${classId}/reports`, icon: FileText },
+    { name: 'Import Reports', path: `/import-reports`, icon: FileUp },
     { name: 'Class Roster', path: `/classes/${classId}/roster`, icon: FileSpreadsheet },
   ];
 

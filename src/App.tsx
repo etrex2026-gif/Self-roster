@@ -13,6 +13,7 @@ import ConductAbsent from './modules/results/ConductAbsent';
 import ClassAnalysis from './modules/analysis/ClassAnalysis';
 import RosterGenerator from './modules/reports/RosterGenerator';
 import ReportCardGenerator from './modules/reports/ReportCardGenerator';
+import ReportCardImporter from './modules/reports/ReportCardImporter';
 import Settings from './modules/settings/Settings';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -62,6 +63,7 @@ export default function App() {
                       <Route path="roster" element={<RosterGenerator />} />
                       <Route path="reports" element={<ReportCardGenerator />} />
                     </Route>
+                    <Route path="/import-reports" element={<ReportCardImporter />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
