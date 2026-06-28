@@ -65,6 +65,7 @@ export default function RosterGenerator() {
 
     return {
       reg: { m: results.filter(r => r.gender === 'Male').length, f: results.filter(r => r.gender === 'Female').length, t: results.length },
+      sat: { m: active.filter(r => r.gender === 'Male').length, f: active.filter(r => r.gender === 'Female').length, t: active.length },
       pass: { m: pass.filter(r => r.gender === 'Male').length, f: pass.filter(r => r.gender === 'Female').length, t: pass.length },
       fail: { m: fail.filter(r => r.gender === 'Male').length, f: fail.filter(r => r.gender === 'Female').length, t: fail.length },
       drop: { m: drop.filter(r => r.gender === 'Male').length, f: drop.filter(r => r.gender === 'Female').length, t: drop.length }
@@ -111,7 +112,7 @@ export default function RosterGenerator() {
           { content: 'UMRII (AGE)', rowSpan: 2 },
           { content: 'SEEM (TERM)', rowSpan: 2 },
           { content: 'GOSA BARNOOTAA (SUBJECT COURSES)', colSpan: subjects.length },
-          { content: 'WALIIGALA BARNOOTAA (ACADEMIC RESULTS SUMMARY)', colSpan: 7 }
+          { content: 'WALIIGALA BARNOOTAA (ACADEMIC RESULTS SUMMARY)', colSpan: 6 }
         ],
         [
           ...subjects.map(s => s.substring(0, 3).toUpperCase()),
@@ -166,12 +167,12 @@ export default function RosterGenerator() {
       autoTable(doc, {
         head: head,
         body: body,
-        startY: 42,
+        startY: 40,
         theme: 'grid',
         margin: { left: marginSide, right: marginSide },
         styles: { 
           fontSize: 8, 
-          cellPadding: 1.2, 
+          cellPadding: 1.1, 
           halign: 'center', 
           valign: 'middle', 
           lineColor: [0, 0, 0], 
@@ -187,11 +188,20 @@ export default function RosterGenerator() {
           fontSize: 8
         },
         columnStyles: {
-          1: { halign: 'left', cellWidth: 40, fontStyle: 'bold' },
-          2: { fontStyle: 'bold', cellWidth: 12 },
-          3: { fontStyle: 'bold', cellWidth: 12 },
-          4: { fontStyle: 'bold', fontSize: 7.5 },
-          ...Object.fromEntries(Array.from({length: subjects.length + 7}, (_, i) => [i + 5, {fontStyle: 'bold'}]))
+          0: { cellWidth: 8, halign: 'center' },
+          1: { halign: 'left', cellWidth: 45, fontStyle: 'bold' },
+          2: { fontStyle: 'bold', cellWidth: 9 },
+          3: { fontStyle: 'bold', cellWidth: 8 },
+          4: { fontStyle: 'bold', cellWidth: 10, fontSize: 7.5 },
+          ...Object.fromEntries(subjects.map((_, idx) => [
+            5 + idx, { fontStyle: 'bold', halign: 'center' }
+          ])),
+          [5 + subjects.length]: { cellWidth: 15.5, fontStyle: 'bold', halign: 'center' },
+          [5 + subjects.length + 1]: { cellWidth: 15.5, fontStyle: 'bold', halign: 'center' },
+          [5 + subjects.length + 2]: { cellWidth: 12, fontStyle: 'bold', halign: 'center' },
+          [5 + subjects.length + 3]: { cellWidth: 25, fontStyle: 'bold', halign: 'center' },
+          [5 + subjects.length + 4]: { cellWidth: 11, fontStyle: 'bold', halign: 'center' },
+          [5 + subjects.length + 5]: { cellWidth: 9, fontStyle: 'bold', halign: 'center' }
         },
         didParseCell: (dataCell) => {
           if (dataCell.section === 'body') {
@@ -201,48 +211,51 @@ export default function RosterGenerator() {
       });
 
       const stats = calculateStats(chunk);
-      const finalY = (doc as any).lastAutoTable.finalY + 4;
+      const finalY = (doc as any).lastAutoTable.finalY + 3;
       
+      const tableWidth = 53;
+      const footerSpacing = (pageWidth - (marginSide * 2) - (tableWidth * 5)) / 4;
+
       const footerTable = (title: string, s: { m: number, f: number, t: number }, x: number) => {
         autoTable(doc, {
           startY: finalY,
-          head: [[{ content: title, colSpan: 3, styles: { halign: 'center', fontSize: 7.5, fontStyle: 'bold', fillColor: [230, 230, 230], textColor: [0, 0, 0] } }], ['Dhiira (M)', 'Dubartii (F)', 'Ida\'ama (T)']],
+          head: [[{ content: title, colSpan: 3, styles: { halign: 'center', fontSize: 6.8, fontStyle: 'bold', fillColor: [230, 230, 230], textColor: [0, 0, 0] } }], ['Dhiira (M)', 'Dubartii (F)', 'Ida\'ama (T)']],
           body: [[s.m, s.f, s.t]],
           theme: 'grid',
-          styles: { fontSize: 8, fontStyle: 'bold', halign: 'center', cellPadding: 1.2, lineColor: [0, 0, 0], lineWidth: 0.2 },
+          styles: { fontSize: 7.5, fontStyle: 'bold', halign: 'center', cellPadding: 1.0, lineColor: [0, 0, 0], lineWidth: 0.2 },
           headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold' },
           margin: { left: x },
-          tableWidth: 66
+          tableWidth: tableWidth
         });
       };
 
-      const footerSpacing = (pageWidth - (marginSide * 2) - (66 * 4)) / 3;
       footerTable("Barattoota Galma'an (Registered)", stats.reg, marginSide);
-      footerTable("Barattoota Darban (Passed)", stats.pass, marginSide + 66 + footerSpacing);
-      footerTable("Barattoota Kufan (Failed)", stats.fail, marginSide + (66 + footerSpacing) * 2);
-      footerTable("Barattoota Addaan Kutan (Dropout)", stats.drop, marginSide + (66 + footerSpacing) * 3);
+      footerTable("Barattoota Darban (Passed)", stats.pass, marginSide + (tableWidth + footerSpacing));
+      footerTable("Barattoota Kufan (Failed)", stats.fail, marginSide + (tableWidth + footerSpacing) * 2);
+      footerTable("Barattoota Addaan Kutan (Dropout)", stats.drop, marginSide + (tableWidth + footerSpacing) * 3);
+      footerTable("KAN QORAMAN (STUDENTS WHO SAT FOR THE EXAMINATION)", stats.sat, marginSide + (tableWidth + footerSpacing) * 4);
 
       // Signature Section
-      const sigY = Math.min(pageHeight - 25, Math.max(pageHeight - 32, (doc as any).lastAutoTable.finalY + 6));
+      const sigY = Math.min(pageHeight - 18, Math.max(pageHeight - 25, (doc as any).lastAutoTable.finalY + 4));
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       const lineLen = 95;
 
       // Teacher (Left Column)
       doc.text(`Maqaa Barsiisaa/Barsiistuu (Homeroom Teacher Name): ${schoolClass.teacherName || '-'}`, 15, sigY);
-      doc.line(15, sigY + 1.5, 15 + lineLen, sigY + 1.5);
-      doc.text("Mallattoo (Signature):", 15, sigY + 8);
-      doc.line(15, sigY + 9.5, 15 + lineLen, sigY + 9.5);
-      doc.text("Guyyaa (Date):", 15, sigY + 16);
-      doc.line(15, sigY + 17.5, 15 + lineLen, sigY + 17.5);
+      doc.line(15, sigY + 1.2, 15 + lineLen, sigY + 1.2);
+      doc.text("Mallattoo (Signature):", 15, sigY + 6.5);
+      doc.line(15, sigY + 7.7, 15 + lineLen, sigY + 7.7);
+      doc.text("Guyyaa (Date):", 15, sigY + 13);
+      doc.line(15, sigY + 14.2, 15 + lineLen, sigY + 14.2);
 
       // Director (Right Column)
       doc.text("M/I/G (Director Name):", 170, sigY);
-      doc.line(170, sigY + 1.5, 170 + lineLen, sigY + 1.5);
-      doc.text("Mallattoo (Signature):", 170, sigY + 8);
-      doc.line(170, sigY + 9.5, 170 + lineLen, sigY + 9.5);
-      doc.text("Guyyaa (Date):", 170, sigY + 16);
-      doc.line(170, sigY + 17.5, 170 + lineLen, sigY + 17.5);
+      doc.line(170, sigY + 1.2, 170 + lineLen, sigY + 1.2);
+      doc.text("Mallattoo (Signature):", 170, sigY + 6.5);
+      doc.line(170, sigY + 7.7, 170 + lineLen, sigY + 7.7);
+      doc.text("Guyyaa (Date):", 170, sigY + 13);
+      doc.line(170, sigY + 14.2, 170 + lineLen, sigY + 14.2);
     });
 
     doc.save(`Roster_${schoolClass.grade}${schoolClass.section}.pdf`);
@@ -351,6 +364,7 @@ export default function RosterGenerator() {
       const stats = calculateStats(chunk);
       const statData = [
           { title: "Registered", s: stats.reg },
+          { title: "Sat for Exam", s: stats.sat },
           { title: "Passed", s: stats.pass },
           { title: "Failed", s: stats.fail },
           { title: "Dropout", s: stats.drop }
@@ -359,11 +373,23 @@ export default function RosterGenerator() {
       const statsStartRow = worksheet.rowCount + 1;
       
       // Title row
-      const titleRow = worksheet.addRow([statData[0].title, '', '', statData[1].title, '', '', statData[2].title, '', '', statData[3].title, '', '']);
+      const titleRow = worksheet.addRow([
+          statData[0].title, '', '', 
+          statData[1].title, '', '', 
+          statData[2].title, '', '', 
+          statData[3].title, '', '', 
+          statData[4].title, '', ''
+      ]);
       // Labels
-      const labelRow = worksheet.addRow(['M', 'F', 'T', 'M', 'F', 'T', 'M', 'F', 'T', 'M', 'F', 'T']);
+      const labelRow = worksheet.addRow(['M', 'F', 'T', 'M', 'F', 'T', 'M', 'F', 'T', 'M', 'F', 'T', 'M', 'F', 'T']);
       // Values
-      const dataRow = worksheet.addRow([statData[0].s.m, statData[0].s.f, statData[0].s.t, statData[1].s.m, statData[1].s.f, statData[1].s.t, statData[2].s.m, statData[2].s.f, statData[2].s.t, statData[3].s.m, statData[3].s.f, statData[3].s.t]);
+      const dataRow = worksheet.addRow([
+          statData[0].s.m, statData[0].s.f, statData[0].s.t, 
+          statData[1].s.m, statData[1].s.f, statData[1].s.t, 
+          statData[2].s.m, statData[2].s.f, statData[2].s.t, 
+          statData[3].s.m, statData[3].s.f, statData[3].s.t, 
+          statData[4].s.m, statData[4].s.f, statData[4].s.t
+      ]);
       
       [titleRow, labelRow, dataRow].forEach(row => {
           row.eachCell(cell => {
@@ -373,8 +399,27 @@ export default function RosterGenerator() {
       });
       
       // Merge titles
-      [1, 4, 7, 10].forEach(col => worksheet.mergeCells(titleRow.number, col, titleRow.number, col + 2));
+      [1, 4, 7, 10, 13].forEach(col => worksheet.mergeCells(titleRow.number, col, titleRow.number, col + 2));
       
+      // Configure Excel column widths
+      worksheet.getColumn(1).width = 5;  // S/N (compact)
+      worksheet.getColumn(2).width = 30; // Full Name
+      worksheet.getColumn(3).width = 7;  // Sex (compact)
+      worksheet.getColumn(4).width = 7;  // Age (compact)
+      worksheet.getColumn(5).width = 7;  // Sem (compact)
+      
+      for (let i = 0; i < subjects.length; i++) {
+        worksheet.getColumn(6 + i).width = 7; // Subjects (compact)
+      }
+      
+      const baseIdx = 6 + subjects.length;
+      worksheet.getColumn(baseIdx).width = 11;     // Tot
+      worksheet.getColumn(baseIdx + 1).width = 11; // Ave
+      worksheet.getColumn(baseIdx + 2).width = 8;  // Rnk (compact)
+      worksheet.getColumn(baseIdx + 3).width = 8;  // G/H (compact)
+      worksheet.getColumn(baseIdx + 4).width = 14; // Yaada
+      worksheet.getColumn(baseIdx + 5).width = 8;  // Hafte (compact)
+
       const newRow = worksheet.addRow([]);
       newRow.addPageBreak();
     });
@@ -432,11 +477,11 @@ export default function RosterGenerator() {
           <Table className="border-collapse border-2 border-slate-900 w-full">
             <TableHeader>
               <TableRow className="bg-white border-b-2 border-slate-900">
-                <TableHead rowSpan={2} className="w-12 text-center border-r-2 border-slate-900 font-black text-[10px] print:text-sm uppercase px-1">T/L (S/N)</TableHead>
+                <TableHead rowSpan={2} className="w-10 text-center border-r-2 border-slate-900 font-black text-[10px] print:text-sm uppercase px-0.5">T/L (S/N)</TableHead>
                 <TableHead rowSpan={2} className="min-w-[200px] border-r-2 border-slate-900 font-black text-[10px] print:text-sm uppercase px-4">Maqaa Guutuu (Full Name)</TableHead>
-                <TableHead rowSpan={2} className="w-12 text-center border-r-2 border-slate-900 font-black text-[10px] print:text-sm uppercase">Saala (Sex)</TableHead>
-                <TableHead rowSpan={2} className="w-12 text-center border-r-2 border-slate-900 font-black text-[10px] print:text-sm uppercase">Umrii (Age)</TableHead>
-                <TableHead rowSpan={2} className="w-20 text-center border-r-2 border-slate-900 font-black text-[10px] print:text-sm uppercase">Seem (Term)</TableHead>
+                <TableHead rowSpan={2} className="w-10 text-center border-r-2 border-slate-900 font-black text-[10px] print:text-sm uppercase px-0.5">Saala (Sex)</TableHead>
+                <TableHead rowSpan={2} className="w-10 text-center border-r-2 border-slate-900 font-black text-[10px] print:text-sm uppercase px-0.5">Umrii (Age)</TableHead>
+                <TableHead rowSpan={2} className="w-12 text-center border-r-2 border-slate-900 font-black text-[10px] print:text-sm uppercase px-0.5">Seem (Term)</TableHead>
                 <TableHead colSpan={data.schoolClass.subjects.length} className="text-center border-r-2 border-slate-900 font-black text-[11px] print:text-base uppercase py-3 bg-slate-50">Gosa Barnootaa (Subject Courses)</TableHead>
                 <TableHead colSpan={6} className="text-center font-black text-[11px] print:text-base uppercase py-3 bg-slate-50">Waliigala Barnootaa (Summary)</TableHead>
               </TableRow>
@@ -444,12 +489,12 @@ export default function RosterGenerator() {
                 {data.schoolClass.subjects.map(s => (
                   <TableHead key={s} className="text-center border-r-2 border-slate-900 font-black text-[9px] print:text-xs uppercase py-2">{s.substring(0, 3)}</TableHead>
                 ))}
-                <TableHead className="text-center border-r-2 border-slate-900 font-black text-[9px] print:text-xs uppercase">Ida (Tot)</TableHead>
-                <TableHead className="text-center border-r-2 border-slate-900 font-black text-[9px] print:text-xs uppercase">Ave</TableHead>
-                <TableHead className="text-center border-r-2 border-slate-900 font-black text-[9px] print:text-xs uppercase">Sad (Rnk)</TableHead>
-                <TableHead className="text-center border-r-2 border-slate-900 font-black text-[9px] print:text-xs uppercase">Yaada</TableHead>
-                <TableHead className="text-center border-r-2 border-slate-900 font-black text-[9px] print:text-xs uppercase">Amala (Conduct)</TableHead>
-                <TableHead className="text-center font-black text-[9px] print:text-xs uppercase">Hafte</TableHead>
+                <TableHead className="w-20 text-center border-r-2 border-slate-900 font-black text-[9px] print:text-xs uppercase px-1">Ida (Tot)</TableHead>
+                <TableHead className="w-20 text-center border-r-2 border-slate-900 font-black text-[9px] print:text-xs uppercase px-1">Ave</TableHead>
+                <TableHead className="w-14 text-center border-r-2 border-slate-900 font-black text-[9px] print:text-xs uppercase px-1">Sad (Rnk)</TableHead>
+                <TableHead className="min-w-[90px] w-[100px] text-center border-r-2 border-slate-900 font-black text-[9px] print:text-xs uppercase px-2">Yaada</TableHead>
+                <TableHead className="w-12 text-center border-r-2 border-slate-900 font-black text-[9px] print:text-xs uppercase px-1">Amala (Conduct)</TableHead>
+                <TableHead className="w-10 text-center font-black text-[9px] print:text-xs uppercase px-1">Hafte</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -457,20 +502,20 @@ export default function RosterGenerator() {
                 <React.Fragment key={r.id}>
                     {/* Semester 1 Row */}
                   <TableRow className="border-b border-slate-900 print:h-12">
-                    <TableCell rowSpan={3} className="text-center border-r-2 border-slate-900 font-bold text-xs print:text-base">{idx + 1}</TableCell>
+                    <TableCell rowSpan={3} className="text-center border-r-2 border-slate-900 font-bold text-xs print:text-base px-0.5">{idx + 1}</TableCell>
                     <TableCell rowSpan={3} className="font-bold text-slate-900 border-r-2 border-slate-900 text-xs print:text-base uppercase px-4">{r.fullName}</TableCell>
-                    <TableCell rowSpan={3} className="text-center border-r-2 border-slate-900 text-xs print:text-base font-bold">{r.gender === 'Male' ? 'Dhi' : 'Dub'}</TableCell>
-                    <TableCell rowSpan={3} className="text-center border-r-2 border-slate-900 text-xs print:text-base font-bold">{r.age}</TableCell>
-                    <TableCell className="text-center border-r-2 border-slate-900 text-[10px] print:text-sm font-black uppercase text-slate-500 py-2 bg-slate-50/30">1ffaa</TableCell>
+                    <TableCell rowSpan={3} className="text-center border-r-2 border-slate-900 text-xs print:text-base font-bold px-0.5">{r.gender === 'Male' ? 'Dhi' : 'Dub'}</TableCell>
+                    <TableCell rowSpan={3} className="text-center border-r-2 border-slate-900 text-xs print:text-base font-bold px-0.5">{r.age}</TableCell>
+                    <TableCell className="text-center border-r-2 border-slate-900 text-[10px] print:text-sm font-black uppercase text-slate-500 py-2 bg-slate-50/30 px-0.5">1ffaa</TableCell>
                     {data.schoolClass.subjects.map(s => (
-                      <TableCell key={`${s}-sem1`} className="text-center border-r-2 border-slate-900 text-[11px] print:text-base font-bold py-2">{r.subjectScores[s].sem1 || '-'}</TableCell>
+                       <TableCell key={`${s}-sem1`} className="text-center border-r-2 border-slate-900 text-[11px] print:text-base font-bold py-2 px-1">{r.subjectScores[s].sem1 || '-'}</TableCell>
                     ))}
-                    <TableCell className="text-center border-r-2 border-slate-900 text-[11px] print:text-base font-bold">{r.sem1Total?.toFixed(1) || '-'}</TableCell>
-                    <TableCell className="text-center border-r-2 border-slate-900 text-[11px] print:text-base font-bold">{r.sem1Avg?.toFixed(1) || '-'}</TableCell>
-                    <TableCell className="text-center border-r-2 border-slate-900 text-[11px] print:text-base font-bold">{r.sem1Rank || '-'}</TableCell>
-                    <TableCell rowSpan={3} className="text-center border-r-2 border-slate-900 text-[11px] print:text-base font-black uppercase text-slate-500">{getYaadaText(r, data.yaadaRules)}</TableCell>
-                    <TableCell rowSpan={3} className="text-center border-r-2 border-slate-900 text-xs print:text-base font-bold">{r.conduct || '-'}</TableCell>
-                    <TableCell rowSpan={3} className="text-center text-xs print:text-base font-bold">{r.absent ?? 0}</TableCell>
+                    <TableCell className="text-center border-r-2 border-slate-900 text-[11px] print:text-base font-bold px-1">{r.sem1Total?.toFixed(1) || '-'}</TableCell>
+                    <TableCell className="text-center border-r-2 border-slate-900 text-[11px] print:text-base font-bold px-1">{r.sem1Avg?.toFixed(1) || '-'}</TableCell>
+                    <TableCell className="text-center border-r-2 border-slate-900 text-[11px] print:text-base font-bold px-1">{r.sem1Rank || '-'}</TableCell>
+                    <TableCell rowSpan={3} className="text-center border-r-2 border-slate-900 text-[11px] print:text-base font-black uppercase text-slate-500 whitespace-nowrap px-2">{getYaadaText(r, data.yaadaRules)}</TableCell>
+                    <TableCell rowSpan={3} className="text-center border-r-2 border-slate-900 text-xs print:text-base font-bold px-1">{r.conduct || '-'}</TableCell>
+                    <TableCell rowSpan={3} className="text-center text-xs print:text-base font-bold px-1">{r.absent ?? 0}</TableCell>
                   </TableRow>
                   {/* Semester 2 Row */}
                   <TableRow className="border-b border-slate-900 print:h-12">
@@ -500,27 +545,28 @@ export default function RosterGenerator() {
 
           {/* Statistics Footer Tables */}
           <div className="p-8 bg-slate-50 border-t print:bg-white print:p-4 print:border-t-2">
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 print:gap-4">
+             <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-4 print:grid-cols-5 print:gap-1.5">
                 {[
                   { title: "Barattoota Galma'an (Registered)", stats: calculateStats(data.results).reg },
                   { title: "Barattoota Darban (Passed)", stats: calculateStats(data.results).pass },
                   { title: "Barattoota Kufan (Failed)", stats: calculateStats(data.results).fail },
-                  { title: "Barattoota Addaan Kutan (Dropout)", stats: calculateStats(data.results).drop }
+                  { title: "Barattoota Addaan Kutan (Dropout)", stats: calculateStats(data.results).drop },
+                  { title: "KAN QORAMAN (STUDENTS WHO SAT FOR THE EXAMINATION)", stats: calculateStats(data.results).sat }
                 ].map(item => (
-                  <div key={item.title} className="bg-white rounded-2xl border-2 border-slate-900 overflow-hidden shadow-md print:shadow-none">
-                    <div className="bg-slate-900 text-white p-2 text-center text-[10px] print:text-xs font-black uppercase tracking-widest">{item.title}</div>
+                  <div key={item.title} className="bg-white rounded-xl border-2 border-slate-900 overflow-hidden shadow-sm print:shadow-none w-full flex flex-col justify-between">
+                    <div className="bg-slate-900 text-white p-1.5 text-center text-[9px] lg:text-[10px] print:text-[8px] font-black uppercase tracking-wider min-h-[42px] flex items-center justify-center">{item.title}</div>
                     <div className="grid grid-cols-3 text-center border-t border-slate-900">
-                      <div className="p-2 border-r border-slate-900">
-                        <p className="text-[8px] print:text-[10px] font-bold text-slate-400">Dhiira (M)</p>
-                        <p className="text-lg print:text-xl font-black">{item.stats.m}</p>
+                      <div className="p-1.5 border-r border-slate-900">
+                        <p className="text-[7px] lg:text-[8px] print:text-[7px] font-bold text-slate-400 uppercase">Dhi (M)</p>
+                        <p className="text-base print:text-sm font-black">{item.stats.m}</p>
                       </div>
-                      <div className="p-2 border-r border-slate-900">
-                        <p className="text-[8px] print:text-[10px] font-bold text-slate-400">Dubartii (F)</p>
-                        <p className="text-lg print:text-xl font-black">{item.stats.f}</p>
+                      <div className="p-1.5 border-r border-slate-900">
+                        <p className="text-[7px] lg:text-[8px] print:text-[7px] font-bold text-slate-400 uppercase">Dub (F)</p>
+                        <p className="text-base print:text-sm font-black">{item.stats.f}</p>
                       </div>
-                      <div className="p-2">
-                        <p className="text-[8px] print:text-[10px] font-bold text-slate-400">Ida'ama (T)</p>
-                        <p className="text-lg print:text-xl font-black">{item.stats.t}</p>
+                      <div className="p-1.5">
+                        <p className="text-[7px] lg:text-[8px] print:text-[7px] font-bold text-slate-400 uppercase">Tot (T)</p>
+                        <p className="text-base print:text-sm font-black">{item.stats.t}</p>
                       </div>
                     </div>
                   </div>

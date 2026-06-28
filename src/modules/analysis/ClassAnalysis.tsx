@@ -55,8 +55,28 @@ export default function ClassAnalysis() {
     });
 
     const activeResults = results.filter(r => !r.isDropout);
-    const top10 = [...activeResults].sort((a, b) => b.generalAverage - a.generalAverage).slice(0, 10);
-    const bottom10 = [...activeResults].sort((a, b) => a.generalAverage - b.generalAverage).slice(0, 10);
+    const top10 = [...activeResults]
+      .sort((a, b) => {
+        if (a.rank !== b.rank) {
+          return a.rank - b.rank;
+        }
+        if (b.generalAverage !== a.generalAverage) {
+          return b.generalAverage - a.generalAverage;
+        }
+        return b.totalScore - a.totalScore;
+      })
+      .slice(0, 10);
+    const bottom10 = [...activeResults]
+      .sort((a, b) => {
+        if (b.rank !== a.rank) {
+          return b.rank - a.rank;
+        }
+        if (a.generalAverage !== b.generalAverage) {
+          return a.generalAverage - b.generalAverage;
+        }
+        return a.totalScore - b.totalScore;
+      })
+      .slice(0, 10);
     const highest = top10[0];
     const lowest = [...activeResults].sort((a, b) => a.generalAverage - b.generalAverage)[0];
 
@@ -68,6 +88,34 @@ export default function ClassAnalysis() {
     const passedCount = activeResults.filter(r => r.generalAverage >= 50).length;
     const failedCount = activeResults.length - passedCount;
     const dropoutCount = results.filter(r => r.isDropout).length;
+
+    const registeredCountM = results.filter(r => r.gender === 'Male').length;
+    const registeredCountF = results.filter(r => r.gender === 'Female').length;
+    const registeredCountT = results.length;
+
+    const satCountM = activeResults.filter(r => r.gender === 'Male').length;
+    const satCountF = activeResults.filter(r => r.gender === 'Female').length;
+    const satCountT = activeResults.length;
+
+    const passedCountM = activeResults.filter(r => r.generalAverage >= 50 && r.gender === 'Male').length;
+    const passedCountF = activeResults.filter(r => r.generalAverage >= 50 && r.gender === 'Female').length;
+    const passedCountT = activeResults.filter(r => r.generalAverage >= 50).length;
+
+    const failedCountM = activeResults.filter(r => r.generalAverage < 50 && r.gender === 'Male').length;
+    const failedCountF = activeResults.filter(r => r.generalAverage < 50 && r.gender === 'Female').length;
+    const failedCountT = activeResults.filter(r => r.generalAverage < 50).length;
+
+    const dropoutCountM = results.filter(r => r.isDropout && r.gender === 'Male').length;
+    const dropoutCountF = results.filter(r => r.isDropout && r.gender === 'Female').length;
+    const dropoutCountT = results.filter(r => r.isDropout).length;
+
+    const summaryStats = {
+      registered: { m: registeredCountM, f: registeredCountF, t: registeredCountT },
+      sat: { m: satCountM, f: satCountF, t: satCountT },
+      passed: { m: passedCountM, f: passedCountF, t: passedCountT },
+      failed: { m: failedCountM, f: failedCountF, t: failedCountT },
+      dropout: { m: dropoutCountM, f: dropoutCountF, t: dropoutCountT }
+    };
 
     return { 
       schoolClass, 
@@ -82,6 +130,7 @@ export default function ClassAnalysis() {
       passedCount,
       failedCount,
       dropoutCount,
+      summaryStats,
       yaadaRules,
       activeCount: activeResults.length,
       classAvg: activeResults.length > 0 ? activeResults.reduce((a, b) => a + b.generalAverage, 0) / activeResults.length : 0
@@ -90,44 +139,167 @@ export default function ClassAnalysis() {
 
   const exportPDF = () => {
     if (!data) return;
-    const { schoolClass, results, subjectAnalysis, top10, highest, classAvg, activeCount, passedCount, failedCount, dropoutCount, maleAvg, femaleAvg, yaadaRules } = data;
+    const { schoolClass, results, subjectAnalysis, top10, highest, classAvg, activeCount, passedCount, failedCount, dropoutCount, maleAvg, femaleAvg, summaryStats, yaadaRules } = data;
 
     const doc = new jsPDF('p', 'mm', 'a4');
-    
-    // Header
-    doc.setFontSize(20);
-    doc.text(`${schoolClass.schoolName.toUpperCase()}`, 105, 15, { align: 'center' });
-    doc.setFontSize(14);
-    doc.text(`Class Performance Analysis Report`, 105, 22, { align: 'center' });
-    doc.setFontSize(10);
-    doc.text(`Grade: ${schoolClass.grade}${schoolClass.section} | Year: ${schoolClass.academicYear}`, 105, 28, { align: 'center' });
+    const pageWidth = 210;
+    const marginSide = 14;
 
-    // Summary Section
-    doc.setFontSize(12);
+    // --- PAGE 1 ---
+    // Header
     doc.setFont('helvetica', 'bold');
-    doc.text("CLASS SUMMARY", 14, 40);
+    doc.setFontSize(20);
+    doc.text(`${schoolClass.schoolName.toUpperCase()}`, 105, 18, { align: 'center' });
+    
+    doc.setFontSize(15);
+    doc.text(`CLASS PERFORMANCE ANALYSIS REPORT`, 105, 25, { align: 'center' });
+    doc.setFontSize(13);
+    doc.text(`GABAASA XIINXALA KUTAA BARNOOTAA`, 105, 31, { align: 'center' });
+
+    // Header Separator Line
+    doc.setLineWidth(0.6);
+    doc.setDrawColor(15, 23, 42);
+    doc.line(14, 35, 196, 35);
+
+    // Section 1: School Information / Odeeffannoo Mana Barumsaa
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text("1. School Information / Odeeffannoo Mana Barumsaa", 14, 43);
+
     autoTable(doc, {
-      startY: 42,
-      head: [['Metric', 'Value']],
+      startY: 46,
       body: [
-        ['Total Students', String(results.length)],
-        ['Active Students', String(activeCount)],
-        ['Passed Students', String(passedCount)],
-        ['Failed Students', String(failedCount)],
-        ['Dropouts', String(dropoutCount)],
-        ['Class Average', classAvg.toFixed(2)],
-        ['Male Average', data.maleAvg.toFixed(2)],
-        ['Female Average', data.femaleAvg.toFixed(2)],
-        ['Pass Rate', `${((passedCount / activeCount) * 100).toFixed(1)}%`],
+        [
+          { content: "School Name / Maqaa Mana Barumsaa", styles: { fontStyle: 'bold', fillColor: [245, 247, 250] } },
+          { content: schoolClass.schoolName, styles: { fontStyle: 'bold' } },
+          { content: "Academic Year / Bara Barnootaa", styles: { fontStyle: 'bold', fillColor: [245, 247, 250] } },
+          { content: schoolClass.academicYear, styles: { fontStyle: 'bold' } }
+        ],
+        [
+          { content: "Grade & Section / Kutaa & Daree", styles: { fontStyle: 'bold', fillColor: [245, 247, 250] } },
+          { content: `${schoolClass.grade} ${schoolClass.section}`, styles: { fontStyle: 'bold' } },
+          { content: "Homeroom Teacher / Barsiisaa I/G", styles: { fontStyle: 'bold', fillColor: [245, 247, 250] } },
+          { content: schoolClass.teacherName || "N/A", styles: { fontStyle: 'bold' } }
+        ]
       ],
-      theme: 'grid'
+      theme: 'grid',
+      styles: { fontSize: 11, cellPadding: 3, lineColor: [80, 80, 80], lineWidth: 0.2 },
+      columnStyles: {
+        0: { halign: 'left', cellWidth: 46 },
+        1: { halign: 'left', cellWidth: 45 },
+        2: { halign: 'left', cellWidth: 46 },
+        3: { halign: 'left', cellWidth: 45 }
+      },
+      margin: { left: 14, right: 14 }
     });
 
-    // Subject Performance
-    doc.text("SUBJECT PERFORMANCE", 14, (doc as any).lastAutoTable.finalY + 10);
+    // Section 2: Student Statistics / Lakkoofsa Barattootaa
+    const nextY1 = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text("2. Student Statistics / Lakkoofsa Barattootaa", 14, nextY1);
+
     autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 12,
-      head: [['Subject', 'Max', 'Min', 'Average', 'Pass Rate']],
+      startY: nextY1 + 3,
+      head: [['Category / Garee', 'Male / Dhiira', 'Female / Dubartii', 'Total / Waligala']],
+      body: [
+        ['Registered Students / Barattoota Galmaa\'an', String(summaryStats.registered.m), String(summaryStats.registered.f), String(summaryStats.registered.t)],
+        ['Students Who Sat for Examination / Kan Qoraman', String(summaryStats.sat.m), String(summaryStats.sat.f), String(summaryStats.sat.t)],
+        ['Passed Students / Barattoota Darban', String(summaryStats.passed.m), String(summaryStats.passed.f), String(summaryStats.passed.t)],
+        ['Failed Students / Barattoota Kufan', String(summaryStats.failed.m), String(summaryStats.failed.f), String(summaryStats.failed.t)],
+        ['Dropout Students / Barattoota Addaan Citan', String(summaryStats.dropout.m), String(summaryStats.dropout.f), String(summaryStats.dropout.t)],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 12, halign: 'center' },
+      bodyStyles: { fontSize: 11, fontStyle: 'bold', cellPadding: 3, lineColor: [80, 80, 80], lineWidth: 0.2 },
+      columnStyles: {
+        0: { halign: 'left', cellWidth: 92 },
+        1: { halign: 'center', cellWidth: 30 },
+        2: { halign: 'center', cellWidth: 30 },
+        3: { halign: 'center', cellWidth: 30 }
+      },
+      margin: { left: 14, right: 14 }
+    });
+
+    // Section 3: Result Statistics / Bu'aa Qormaataa
+    const nextY2 = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text("3. Result Statistics / Bu'aa Qormaataa", 14, nextY2);
+
+    autoTable(doc, {
+      startY: nextY2 + 3,
+      head: [['Metric / Safartuu', 'Value / Gatii']],
+      body: [
+        ['Class Average / Giddugaleessa Kutaa', `${classAvg.toFixed(2)}%`],
+        ['Male Average / Giddugaleessa Dhiiraa', `${data.maleAvg.toFixed(2)}%`],
+        ['Female Average / Giddugaleessa Dubartootaa', `${data.femaleAvg.toFixed(2)}%`],
+        ['Pass Rate / Reejjii Darbiinsaa', `${((passedCount / activeCount) * 100).toFixed(1)}%`],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 12, halign: 'center' },
+      bodyStyles: { fontSize: 11, fontStyle: 'bold', cellPadding: 3, lineColor: [80, 80, 80], lineWidth: 0.2 },
+      columnStyles: {
+        0: { halign: 'left', cellWidth: 122 },
+        1: { halign: 'center', cellWidth: 60 }
+      },
+      margin: { left: 14, right: 14 }
+    });
+
+    // Page 1 Footer
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text("Page 1 of 2", 105, 285, { align: 'center' });
+
+
+    // --- PAGE 2 ---
+    doc.addPage();
+
+    // Page 2 Running Header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(`${schoolClass.schoolName.toUpperCase()} - GRADE ${schoolClass.grade}${schoolClass.section}`, 14, 15);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Academic Year: ${schoolClass.academicYear}`, 196, 15, { align: 'right' });
+    doc.setLineWidth(0.3);
+    doc.setDrawColor(15, 23, 42);
+    doc.line(14, 18, 196, 18);
+
+    // Section 4: Top 10 Students / Barattoota 10 Ol'aanaa
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text("4. Top 10 Students / Barattoota 10 Ol'aanaa", 14, 26);
+
+    autoTable(doc, {
+      startY: 29,
+      head: [['Rank / Sadarkaa', 'Student Name / Maqaa Barataa', 'Total Marks / Walitti Ida\'ama Qabxii', 'Average / Giddugaleessa']],
+      body: top10.map((s, idx) => [
+        s.rank || (idx + 1),
+        s.fullName,
+        s.totalScore.toFixed(2),
+        `${s.generalAverage.toFixed(2)}%`
+      ]),
+      theme: 'grid',
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 12, halign: 'center' },
+      bodyStyles: { fontSize: 11, fontStyle: 'bold', cellPadding: 2.5, lineColor: [80, 80, 80], lineWidth: 0.2 },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 25 },
+        1: { halign: 'left', cellWidth: 77 },
+        2: { halign: 'right', cellWidth: 40 },
+        3: { halign: 'right', cellWidth: 40 }
+      },
+      margin: { left: 14, right: 14 }
+    });
+
+    // Section 5: Summary & Subject Performance / Cuunfaa fi Hoji-raawwii Barnootaa
+    const nextY3 = (doc as any).lastAutoTable.finalY + 8;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text("5. Summary & Subject Performance / Cuunfaa fi Hoji-raawwii Barnootaa", 14, nextY3);
+
+    autoTable(doc, {
+      startY: nextY3 + 3,
+      head: [['Subject / Barnoota', 'Highest / Ol\'aanaa', 'Lowest / Gad-aanaa', 'Average / Giddugaleessa', 'Pass Rate / Reejjii Darbiinsaa']],
       body: subjectAnalysis.map(s => [
         s.subject,
         s.max.toFixed(1),
@@ -135,32 +307,67 @@ export default function ClassAnalysis() {
         s.avg.toFixed(1),
         `${s.passRate.toFixed(1)}%`
       ]),
-      theme: 'grid'
+      theme: 'grid',
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 12, halign: 'center' },
+      bodyStyles: { fontSize: 11, fontStyle: 'bold', cellPadding: 2.5, lineColor: [80, 80, 80], lineWidth: 0.2 },
+      columnStyles: {
+        0: { halign: 'left', cellWidth: 62 },
+        1: { halign: 'right', cellWidth: 30 },
+        2: { halign: 'right', cellWidth: 30 },
+        3: { halign: 'right', cellWidth: 30 },
+        4: { halign: 'right', cellWidth: 30 }
+      },
+      margin: { left: 14, right: 14 }
     });
 
-    // Top 10 Students
-    doc.text("TOP 10 STUDENTS", 14, (doc as any).lastAutoTable.finalY + 10);
-    autoTable(doc, {
-      startY: (doc as any).lastAutoTable.finalY + 12,
-      head: [['Rank', 'Name', 'Average', 'Status']],
-      body: top10.map((s, idx) => [
-        idx + 1,
-        s.fullName,
-        s.generalAverage.toFixed(2),
-        s.status
-      ]),
-      theme: 'grid'
-    });
+    // Teacher's Remarks Area
+    const remarksY = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text("Yaada fi Gorsa Barsiisaa / Teacher's Remarks & Recommendations:", 14, remarksY);
+    
+    doc.setLineWidth(0.1);
+    doc.setDrawColor(180, 180, 180);
+    doc.line(14, remarksY + 7, 196, remarksY + 7);
+    doc.line(14, remarksY + 14, 196, remarksY + 14);
+
+    // Signature Area
+    const sigY = remarksY + 24;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    
+    doc.text("_____________________________", 14, sigY);
+    doc.text("Barsiisaa Daree / Homeroom Teacher", 14, sigY + 5);
+    doc.text("Mallattoo / Signature", 14, sigY + 9);
+
+    doc.text("_____________________________", 130, sigY);
+    doc.text("Duree Mana Barumsaa / Director", 130, sigY + 5);
+    doc.text("Mallattoo / Signature", 130, sigY + 9);
+
+    // Page 2 Footer
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text("Page 2 of 2", 105, 285, { align: 'center' });
 
     doc.save(`analysis-${schoolClass.grade}${schoolClass.section}.pdf`);
   };
 
   const exportExcel = () => {
     if (!data) return;
-    const { subjectAnalysis, top10, yaadaRules } = data;
+    const { subjectAnalysis, top10, summaryStats, yaadaRules } = data;
     
     const wb = XLSX.utils.book_new();
     
+    const summaryData = [
+      { 'Category': 'Registered Students', 'Male (Dhi)': summaryStats.registered.m, 'Female (Dub)': summaryStats.registered.f, 'Total': summaryStats.registered.t },
+      { 'Category': 'Students Who Sat for Exam (Kan Qoraman)', 'Male (Dhi)': summaryStats.sat.m, 'Female (Dub)': summaryStats.sat.f, 'Total': summaryStats.sat.t },
+      { 'Category': 'Passed Students', 'Male (Dhi)': summaryStats.passed.m, 'Female (Dub)': summaryStats.passed.f, 'Total': summaryStats.passed.t },
+      { 'Category': 'Failed Students', 'Male (Dhi)': summaryStats.failed.m, 'Female (Dub)': summaryStats.failed.f, 'Total': summaryStats.failed.t },
+      { 'Category': 'Dropout Students', 'Male (Dhi)': summaryStats.dropout.m, 'Female (Dub)': summaryStats.dropout.f, 'Total': summaryStats.dropout.t },
+    ];
+    const ws0 = XLSX.utils.json_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, ws0, 'Class Summary');
+
     const subjectData = subjectAnalysis.map(s => ({
       'Subject': s.subject,
       'Highest Mark': s.max.toFixed(1),
@@ -172,10 +379,10 @@ export default function ClassAnalysis() {
     XLSX.utils.book_append_sheet(wb, ws1, 'Subject Analysis');
 
     const topStudentsData = top10.map((s, idx) => ({
-      'Rank': idx + 1,
-      'Name': s.fullName,
-      'Average': s.generalAverage.toFixed(2),
-      'Status': s.status
+      'Rank': s.rank || (idx + 1),
+      'Student Name': s.fullName,
+      'Total': Number(s.totalScore.toFixed(2)),
+      'Average': Number(s.generalAverage.toFixed(2))
     }));
     const ws2 = XLSX.utils.json_to_sheet(topStudentsData);
     XLSX.utils.book_append_sheet(wb, ws2, 'Top 10 Students');
@@ -266,6 +473,44 @@ export default function ClassAnalysis() {
         ))}
       </div>
 
+      {/* Comprehensive Statistical Analysis Table */}
+      <Card className="rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden bg-white dark:bg-slate-900">
+        <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
+          <CardTitle className="text-xl font-black">Comprehensive Statistical Summary</CardTitle>
+          <CardDescription>
+            Detailed analysis of registered, tested, passed, failed, and dropout students by gender.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0 overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-slate-50/30 dark:bg-slate-900/30">
+                <TableHead className="font-bold text-slate-700 dark:text-slate-200">Category</TableHead>
+                <TableHead className="text-center font-bold text-slate-700 dark:text-slate-200">Dhi (Male)</TableHead>
+                <TableHead className="text-center font-bold text-slate-700 dark:text-slate-200">Dub (Female)</TableHead>
+                <TableHead className="text-center font-bold text-slate-700 dark:text-slate-200">Total (Waliigala)</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[
+                { label: 'Registered Students', stats: data.summaryStats.registered, bg: '' },
+                { label: 'Students Who Sat for Exam (Kan Qoraman)', stats: data.summaryStats.sat, bg: 'bg-indigo-50/40 dark:bg-indigo-950/10 font-semibold' },
+                { label: 'Passed Students', stats: data.summaryStats.passed, bg: 'text-green-600 dark:text-green-400 font-semibold' },
+                { label: 'Failed Students', stats: data.summaryStats.failed, bg: 'text-red-600 dark:text-red-400 font-semibold' },
+                { label: 'Dropout Students', stats: data.summaryStats.dropout, bg: 'text-slate-500 font-semibold' }
+              ].map((row, index) => (
+                <TableRow key={index} className={`${row.bg} hover:bg-slate-50/50`}>
+                  <TableCell className="font-bold">{row.label}</TableCell>
+                  <TableCell className="text-center text-base">{row.stats.m}</TableCell>
+                  <TableCell className="text-center text-base">{row.stats.f}</TableCell>
+                  <TableCell className="text-center text-lg font-black">{row.stats.t}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Subject Average Chart */}
         <Card className="rounded-3xl border-slate-200 shadow-xl overflow-hidden">
@@ -349,17 +594,19 @@ export default function ClassAnalysis() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12 text-center">Rank</TableHead>
-                    <TableHead>Student Name</TableHead>
-                    <TableHead className="text-right">Average</TableHead>
+                    <TableHead className="w-16 text-center font-bold">Rank</TableHead>
+                    <TableHead className="font-bold">Student Name</TableHead>
+                    <TableHead className="text-right font-bold">Total</TableHead>
+                    <TableHead className="text-right font-bold">Average</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.top10.map((s, i) => (
+                  {data.top10.map((s) => (
                     <TableRow key={s.id}>
-                      <TableCell className="text-center font-black text-slate-400">{i + 1}</TableCell>
-                      <TableCell className="font-bold">{s.fullName}</TableCell>
-                      <TableCell className="text-right font-black text-indigo-600">{s.generalAverage.toFixed(2)}</TableCell>
+                      <TableCell className="text-center font-black text-slate-500">{s.rank}</TableCell>
+                      <TableCell className="font-semibold text-slate-800 dark:text-slate-150">{s.fullName}</TableCell>
+                      <TableCell className="text-right font-medium text-slate-600 dark:text-slate-400">{s.totalScore.toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-black text-indigo-600 dark:text-indigo-400">{s.generalAverage.toFixed(2)}%</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -381,17 +628,19 @@ export default function ClassAnalysis() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12 text-center">Rank</TableHead>
-                    <TableHead>Student Name</TableHead>
-                    <TableHead className="text-right">Average</TableHead>
+                    <TableHead className="w-16 text-center font-bold">Rank</TableHead>
+                    <TableHead className="font-bold">Student Name</TableHead>
+                    <TableHead className="text-right font-bold">Total</TableHead>
+                    <TableHead className="text-right font-bold">Average</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.bottom10.map((s, i) => (
+                  {data.bottom10.map((s) => (
                     <TableRow key={s.id}>
-                      <TableCell className="text-center font-black text-slate-400">{i + 1}</TableCell>
-                      <TableCell className="font-bold">{s.fullName}</TableCell>
-                      <TableCell className="text-right font-black text-red-600">{s.generalAverage.toFixed(2)}</TableCell>
+                      <TableCell className="text-center font-black text-slate-500">{s.rank}</TableCell>
+                      <TableCell className="font-semibold text-slate-800 dark:text-slate-150">{s.fullName}</TableCell>
+                      <TableCell className="text-right font-medium text-slate-600 dark:text-slate-400">{s.totalScore.toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-black text-red-600 dark:text-red-400">{s.generalAverage.toFixed(2)}%</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
